@@ -1,0 +1,57 @@
+version: '3.7'
+
+networks:
+  ragline:
+    name: ragline
+
+services:
+  weaviate:
+    command:
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8080'
+    - --scheme
+    - http
+    image: semitechnologies/weaviate:1.23.0
+    expose:
+    - "8080"
+    - "50051"
+    volumes:
+    - ./.cache/weaviate:/var/lib/weaviate
+    restart: on-failure:0
+    networks:
+    - ragline
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-palm,text2vec-openai,generative-openai,generative-cohere,generative-palm,ref2vec-centroid,reranker-cohere,qna-openai'
+      CLUSTER_HOSTNAME: 'node1'
+
+  server:
+    image: ragline/server:0.0.1
+    build:
+      context: ./better_example
+      dockerfile: ./Dockerfile
+    expose:
+    - "9000"
+    volumes:
+    - ./.cache/docs:/app/.cache/docs
+    - ./.cache/tmp:/app/.cache/tmp
+    - ./.cache/huggingface:/app/.cache/huggingface
+    networks:
+    - ragline
+    environment:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      WEAVIATE_URL: "${WEAVIATE_URL}"
+      WEAVIATE_COLLECTION_NAME: "${WEAVIATE_COLLECTION_NAME}"
+
+  ui:
+    image: ragline/ui:0.0.1
+    build:
+      context: ./ui-example
+      dockerfile: ./Dockerfile
+    networks:
+    - ragline

@@ -1,0 +1,7 @@
+.cache
+.docs
+.docs_for_test
+__pycache__
+
+.env
+docker-compose.override.yml

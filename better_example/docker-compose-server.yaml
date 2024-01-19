@@ -1,0 +1,17 @@
+services:
+  server:
+    image: ragline/server:0.0.1
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+    - 9000:9000
+    volumes:
+    - ./.cache/docs:/app/.cache/docs
+    - ./.cache/tmp:/app/.cache/tmp
+    - ./.cache/huggingface:/app/.cache/huggingface
+    network_mode: host
+    environment:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      WEAVIATE_URL: "${WEAVIATE_URL}"
+      WEAVIATE_COLLECTION_NAME: "${WEAVIATE_COLLECTION_NAME}"

@@ -1,0 +1,18 @@
+{
+    "host": "0.0.0.0",
+    "port": 8000,
+    "models": [
+        {
+            "model": "/home/chris/.cache/lm-studio/models/TheBloke/phi-2-GGUF/phi-2.Q6_K.gguf",
+            "model_alias": "phi-2",
+            "chat_format": "chatml",
+            "n_gpu_layers": 40
+        },
+        {
+            "model": "/home/chris/.cache/lm-studio/models/TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q5_K_M.gguf",
+            "model_alias": "Llama-2-7B-Chat",
+            "chat_format": "chatml",
+            "n_gpu_layers": 33
+        }
+    ]
+}
