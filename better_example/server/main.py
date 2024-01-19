@@ -111,20 +111,21 @@ async def upsert_file(
         # fake multiple files
         # files = [file]
         # for file in files:
-        path = TMP_PATH + "/" + file.filename
-        print("Creating file: %s" % path)
-        with open(path, "wb") as f:
+        tmp_path = TMP_PATH + "/" + file.filename
+        dest_path = DOCS_PATH + "/" + file.filename
+        print("Creating file: %s" % tmp_path)
+        with open(tmp_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-            print("File created: %s, now ingesting" % path)
+            print("File created: %s, now ingesting" % tmp_path)
 
-            result = do_upsert_file(path)
+            result = do_upsert_file(tmp_path)
 
-            print("Indexing complete for file %s, now moving to folder ", path)
+            print("Indexing complete for file %s, now moving to folder ", tmp_path)
 
             shutil.move(
-                path,
-                DOCS_PATH,
+                tmp_path,
+                dest_path,
             )
 
             return "OK"
