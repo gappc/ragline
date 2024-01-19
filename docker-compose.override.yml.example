@@ -3,4 +3,7 @@ version: '3.7'
 services:
   ui:
     ports:
-    - 80:80
+    - 7824:80
+  server:
+    ports:
+    - 9000:9000
