@@ -1,9 +1,13 @@
 version: '3.7'
 
 services:
-  ui:
+  weaviate:
     ports:
-    - 7824:80
+    - 8080:8080
+    - 50051:50051
   server:
     ports:
     - 9000:9000
+  ui:
+    ports:
+    - 7824:80
