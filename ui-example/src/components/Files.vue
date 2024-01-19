@@ -2,39 +2,31 @@
   <div>
     <h2>Files</h2>
     <button @click="fetchFileList">Load File List</button>
-    <div>
-      <div
-        v-for="file in files"
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 1rem;
-        "
-      >
+    <div class="flex flex-col gap-1">
+      <div v-for="file in files" class="flex justify-between items-center">
         <a
           :href="`/api/files/${file.name}`"
           target="_blank"
-          style="width: 40rem; text-align: left"
+          class="text-left"
           >{{ file.name }}</a
         >
-        <div>
+        <div class="flex items-center gap-2">
           <span>{{ file.size / 1e6 }} MB</span>
           <button @click="deleteFile(file.name)">Delete</button>
         </div>
       </div>
     </div>
     <div v-if="fileListLoading">Loading...</div>
-    <div v-if="fileListMessage" style="color: green">
+    <div v-if="fileListMessage" class="text-success">
       {{ fileListMessage }}
     </div>
-    <div v-if="fileListError" style="color: red">{{ fileListError }}</div>
+    <div v-if="fileListError" class="text-error">{{ fileListError }}</div>
 
     <div v-if="deleteFileLoading">Deleting...</div>
-    <div v-if="deleteFileMessage" style="color: green">
+    <div v-if="deleteFileMessage" class="text-success">
       {{ deleteFileMessage }}
     </div>
-    <div v-if="deleteFileError" style="color: red">{{ deleteFileError }}</div>
+    <div v-if="deleteFileError" class="text-error">{{ deleteFileError }}</div>
   </div>
 </template>
 

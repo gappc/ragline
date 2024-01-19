@@ -1,5 +1,5 @@
 <template>
-  <div style="display: flex; flex-direction: column; gap: 2rem">
+  <div class="flex flex-col gap-4">
     <Files />
     <Upload />
     <Query />
@@ -14,18 +14,3 @@ import { useFileStore } from "./modules/files/filesStore";
 
 useFileStore().fetchFileList();
 </script>
-
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>

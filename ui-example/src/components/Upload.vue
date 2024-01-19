@@ -6,10 +6,10 @@
       <button @click="handleFileUpload">Upload</button>
     </div>
     <div v-if="uploadFileLoading">Uploading...</div>
-    <div v-if="uploadFileMessage" style="color: green">
+    <div v-if="uploadFileMessage" class="text-success">
       {{ uploadFileMessage }}
     </div>
-    <div v-if="uploadFileError" style="color: red">{{ uploadFileError }}</div>
+    <div v-if="uploadFileError" class="text-error">{{ uploadFileError }}</div>
   </div>
 </template>
 
