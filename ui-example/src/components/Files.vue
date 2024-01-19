@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="border rounded p-2">
     <h2>Files</h2>
     <button @click="fetchFileList">Load File List</button>
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-1 max-h-80 overflow-y-auto py-4">
       <div v-for="file in files" class="flex justify-between items-center">
         <a
           :href="`/api/files/${file.name}`"
