@@ -11,7 +11,7 @@
           >{{ file.name }}</a
         >
         <div class="flex items-center gap-2">
-          <span>{{ file.size / 1e6 }} MB</span>
+          <span>{{ Math.round(file.size / 1e3) / 1e3 }} MB</span>
           <button @click="deleteFile(file.name)">Delete</button>
         </div>
       </div>

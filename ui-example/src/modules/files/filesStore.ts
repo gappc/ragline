@@ -32,7 +32,6 @@ export const useFileStore = defineStore("filesStore", {
   actions: {
     async fetchFileList() {
       this.fileListLoading = true;
-      this.clearMessages();
 
       try {
         const response = await fetch("/api/files");
@@ -58,7 +57,6 @@ export const useFileStore = defineStore("filesStore", {
     },
     async uploadFiles(files: File[]) {
       this.uploadFileLoading = true;
-      this.clearMessages();
 
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file, file.name));
@@ -89,7 +87,6 @@ export const useFileStore = defineStore("filesStore", {
     },
     async deleteFile(filename: string) {
       this.deleteFileLoading = true;
-      this.clearMessages();
 
       try {
         const response = await fetch(`/api/files/${filename}`, {
@@ -114,14 +111,6 @@ export const useFileStore = defineStore("filesStore", {
       }
 
       this.fetchFileList();
-    },
-    clearMessages() {
-      this.fileListMessage = null;
-      this.fileListError = null;
-      this.uploadFileMessage = null;
-      this.uploadFileError = null;
-      this.deleteFileMessage = null;
-      this.deleteFileError = null;
     },
   },
 });
