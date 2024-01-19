@@ -58,3 +58,5 @@ def delete_data(collection_name: str, source):
 
 if __name__ == "__main__":
     show_collections()
+    print("----------------------------")
+    show_data(weaviate_collection_name)
