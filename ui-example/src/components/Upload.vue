@@ -2,7 +2,12 @@
   <div>
     <div>
       Upload file:
-      <input ref="fileInput" type="file" @change="handleFileInputChange()" />
+      <input
+        ref="fileInput"
+        type="file"
+        multiple
+        @change="handleFileInputChange()"
+      />
       <button @click="handleFileUpload">Upload</button>
     </div>
     <pre v-if="uploading">Uploading...</pre>
@@ -43,11 +48,10 @@ const uploadFiles = async (files: File[]) => {
   uploading.value = true;
 
   const formData = new FormData();
-  formData.append("file", files[0], files[0].name);
-  // files.forEach((file) => formData.append(file.name, file));
+  files.forEach((file) => formData.append("files", file, file.name));
 
   try {
-    const response = await fetch("/api/upsert-file", {
+    const response = await fetch("/api/upsert-files", {
       method: "POST",
       body: formData,
     });

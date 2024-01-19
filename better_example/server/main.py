@@ -101,34 +101,33 @@ async def post_query(
 
 
 @app.post(
-    "/upsert-file",
+    "/upsert-files",
     # response_model=UpsertResponse,
 )
-async def upsert_file(
-    file: UploadFile = File(...),
-):
+async def upsert_files(files: list[UploadFile]):
     try:
-        # fake multiple files
-        # files = [file]
-        # for file in files:
-        tmp_path = TMP_PATH + "/" + file.filename
-        dest_path = DOCS_PATH + "/" + file.filename
-        print("Creating file: %s" % tmp_path)
-        with open(tmp_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
+        for file in files:
+            tmp_file_path = TMP_PATH + "/" + file.filename
+            dest_file_path = DOCS_PATH + "/" + file.filename
+            print("Creating file: %s" % tmp_file_path)
+            with open(tmp_file_path, "wb") as f:
+                shutil.copyfileobj(file.file, f)
 
-            print("File created: %s, now ingesting" % tmp_path)
+                print("File created: %s, now ingesting" % tmp_file_path)
 
-            result = do_upsert_file(tmp_path)
+                result = do_upsert_file(tmp_file_path)
 
-            print("Indexing complete for file %s, now moving to folder ", tmp_path)
+                print(
+                    "Indexing complete for file %s, now moving to folder ",
+                    tmp_file_path,
+                )
 
-            shutil.move(
-                tmp_path,
-                dest_path,
-            )
+                shutil.move(
+                    tmp_file_path,
+                    dest_file_path,
+                )
 
-            return "OK"
+        return "OK"
 
     except Exception as e:
         print("---------Error upsert_file---------")
