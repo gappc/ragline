@@ -1,5 +1,11 @@
 # Python helper scripts
 
+## docker container stop, git pull, build and start
+
+```bash
+docker-compose stop && git pull && docker-compose build && docker-compose up -d
+```
+
 ## weaviate_client helper script
 
 ```bash

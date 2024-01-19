@@ -23,8 +23,12 @@ import { useQuery } from "../modules/query/useQuery";
 const query = ref("");
 const queryModel = ref("");
 
-const { submitQueryMessage, submitQueryError, submitQueryLoading } =
-  useQuery(query);
+const {
+  submitQueryMessage,
+  submitQueryError,
+  submitQueryLoading,
+  submitQuery,
+} = useQuery();
 
-const submit = () => (query.value = queryModel.value);
+const submit = () => submitQuery(query.value);
 </script>
