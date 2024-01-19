@@ -1,10 +1,18 @@
 import os
+from os.path import isfile, join
+
 from pathlib import Path
 from fastapi.responses import StreamingResponse
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+
+from vector_store.weaviate_client import client, weaviate_collection_name
+from llama_index.vector_stores.weaviate_utils import (
+    parse_get_response,
+)
+import json
 
 import logging
 import sys
@@ -16,6 +24,7 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 from contextlib import asynccontextmanager
 
+from .files import do_get_files, do_delete_file
 import shutil
 
 from .api import (
@@ -100,10 +109,7 @@ async def post_query(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
-@app.post(
-    "/upsert-files",
-    # response_model=UpsertResponse,
-)
+@app.post("/files")
 async def upsert_files(files: list[UploadFile]):
     try:
         for file in files:
@@ -138,47 +144,49 @@ async def upsert_files(files: list[UploadFile]):
         file.file.close()
 
 
-# @app.post(
-#     "/upsert",
-#     response_model=UpsertResponse,
-# )
-# async def upsert(
-#     request: UpsertRequest = Body(...),
-# ):
-#     try:
-#         ids = await datastore.upsert(request.documents)
-#         return UpsertResponse(ids=ids)
-#     except Exception as e:
-#         print("---------Error upsert---------")
-#         print(e)
-#         print("---------Error upsert end---------")
-#         raise HTTPException(status_code=500, detail="Internal Service Error")
+@app.get("/files")
+async def get_files():
+    return do_get_files(DOCS_PATH)
 
 
-# @app.delete(
-#     "/delete",
-#     response_model=DeleteResponse,
-# )
-# async def delete(
-#     request: DeleteRequest = Body(...),
-# ):
-#     if not (request.ids or request.filter or request.delete_all):
-#         raise HTTPException(
-#             status_code=400,
-#             detail="One of ids, filter, or delete_all is required",
-#         )
-#     try:
-#         success = await datastore.delete(
-#             ids=request.ids,
-#             filter=request.filter,
-#             delete_all=request.delete_all,
-#         )
-#         return DeleteResponse(success=success)
-#     except Exception as e:
-#         print("---------Error delete---------")
-#         print(e)
-#         print("---------Error delete end---------")
-#         raise HTTPException(status_code=500, detail="Internal Service Error")
+@app.delete("/files/{filename}")
+async def delete_file(filename: str):
+    try:
+        path = DOCS_PATH + "/" + filename
+
+        print("Deleting file: %s" % path)
+
+        do_delete_file(path)
+        print("File deleted: %s, now removing from index" % path)
+
+        where_filter = {
+            "path": ["file_path"],
+            "operator": "Equal",
+            "valueText": filename,
+        }
+        query = (
+            client.query.get(
+                weaviate_collection_name, properties=["ref_doc_id", "file_path"]
+            )
+            .with_where(where_filter)
+            .with_limit(10000)  # 10,000 is the max weaviate can fetch
+        )
+        query_result = query.do()
+        parsed_result = parse_get_response(query_result)
+        entries = parsed_result[weaviate_collection_name]
+        print(json.dumps(entries, indent=2))
+        delete_result = client.batch.delete_objects(
+            weaviate_collection_name, where_filter
+        )
+        print("Delete result: ", delete_result)
+        print("Removing from index success")
+
+        return "OK"
+    except Exception as e:
+        print("---------Error delete_file---------")
+        print(e)
+        print("---------Error delete_file end---------")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @asynccontextmanager

@@ -1,7 +1,7 @@
 <template>
   <div>
-    Full response:
-    <pre style="white-space: pre-wrap">{{ response }}</pre>
+    <h2>Full response</h2>
+    <pre style="text-align: left; white-space: pre-wrap">{{ response }}</pre>
   </div>
 </template>
 

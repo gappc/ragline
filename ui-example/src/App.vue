@@ -1,58 +1,18 @@
 <template>
-  <div style="display: flex; flex-direction: column; gap: 30px">
+  <div style="display: flex; flex-direction: column; gap: 2rem">
+    <Files />
     <Upload />
-    <Query @submit="submit" />
-    <Response :response="response" style="text-align: left" />
+    <Query />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import Upload from "./components/Upload.vue";
+import Files from "./components/Files.vue";
 import Query from "./components/Query.vue";
-import Response from "./components/Response.vue";
+import Upload from "./components/Upload.vue";
+import { useFileStore } from "./modules/files/filesStore";
 
-interface Query {
-  query: string;
-  filter?: unknown[];
-  top_k?: number[];
-}
-
-interface QueryBody {
-  queries: Query[];
-}
-
-const response = ref("");
-const abortController = ref<AbortController | null>(null);
-
-const submit = async (query: string) => {
-  if (abortController.value != null && !abortController.value.signal.aborted) {
-    abortController.value.abort();
-  }
-  abortController.value = new AbortController();
-
-  response.value = "";
-
-  const body: QueryBody = {
-    queries: [{ query }],
-  };
-
-  const fetchResult = await fetch("/api/query", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: abortController.value.signal,
-  });
-  const reader = fetchResult.body?.getReader();
-  const decoder = new TextDecoder("utf-8");
-  while (true) {
-    const { value, done } = await reader!.read();
-    if (done) break;
-    const decodedValue = decoder.decode(value);
-    console.log("Received", decodedValue);
-    response.value += decodedValue;
-  }
-};
+useFileStore().fetchFileList();
 </script>
 
 <style scoped>

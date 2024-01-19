@@ -1,35 +1,28 @@
 <template>
   <div>
     <div>
-      Upload file:
-      <input
-        ref="fileInput"
-        type="file"
-        multiple
-        @change="handleFileInputChange()"
-      />
+      <h2>Upload file</h2>
+      <input ref="fileInput" type="file" multiple @change="handleFileUpload" />
       <button @click="handleFileUpload">Upload</button>
     </div>
-    <pre v-if="uploading">Uploading...</pre>
-    <pre style="color: green">{{ uploadMessage }}</pre>
-    <pre style="color: red">{{ errorMessage }}</pre>
+    <div v-if="uploadFileLoading">Uploading...</div>
+    <div v-if="uploadFileMessage" style="color: green">
+      {{ uploadFileMessage }}
+    </div>
+    <div v-if="uploadFileError" style="color: red">{{ uploadFileError }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useFileStore } from "../modules/files/filesStore";
 
 const fileInput = ref<HTMLInputElement | null>(null);
-// const files = ref<FileList | null>();
 
-const uploadMessage = ref("");
-const errorMessage = ref("");
-const uploading = ref(false);
-
-const handleFileInputChange = () => {
-  uploadMessage.value = "";
-  errorMessage.value = "";
-};
+const { uploadFileMessage, uploadFileError, uploadFileLoading } = storeToRefs(
+  useFileStore()
+);
 
 const handleFileUpload = async () => {
   console.log("handleFileUpload", fileInput.value?.files);
@@ -39,40 +32,7 @@ const handleFileUpload = async () => {
     return;
   }
   const filesToUpload = Array.from(files);
-  uploadFiles(filesToUpload);
-};
-
-const uploadFiles = async (files: File[]) => {
-  uploadMessage.value = "";
-  errorMessage.value = "";
-  uploading.value = true;
-
-  const formData = new FormData();
-  files.forEach((file) => formData.append("files", file, file.name));
-
-  try {
-    const response = await fetch("/api/upsert-files", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (response.status >= 400) {
-      console.log("Error:", response);
-      const message = {
-        status: response.status,
-        statusText: response.statusText,
-        body: await response.text(),
-      };
-      throw new Error(JSON.stringify(message));
-    }
-
-    uploadMessage.value = await response.text();
-  } catch (error) {
-    console.error("Error:", error);
-    errorMessage.value =
-      error instanceof Error ? error.message : JSON.stringify(error);
-  } finally {
-    uploading.value = false;
-  }
+  await useFileStore().uploadFiles(filesToUpload);
+  await useFileStore().fetchFileList();
 };
 </script>
