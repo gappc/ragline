@@ -1,5 +1,9 @@
 <template>
-  <div>Query: <input type="text" v-model="query" @keyup.enter="submit" /></div>
+  <div>
+    Query:
+    <input type="text" v-model="query" @keyup.enter="submit" />
+    <button @click="submit">Ask</button>
+  </div>
 </template>
 
 <script setup lang="ts">
