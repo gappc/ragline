@@ -101,10 +101,21 @@ async def post_query(
         response = do_query(request.queries[0].query)
         # print(response)
         print("-------------------------------------------")
-        return StreamingResponse(response.response_gen, media_type="text/event-stream")
+        print("response source nodes length: ", len(response.source_nodes))
+        # We assume that there is a streamable response if there are source nodes
+        if len(response.source_nodes) > 0:
+            return StreamingResponse(
+                response.response_gen, media_type="text/event-stream"
+            )
+
+        async def gen():
+            yield b"No documents found that match your query. Maybe you need to upload some documents first?"
+
+        return StreamingResponse(gen(), media_type="text/event-stream", status_code=404)
+
     except Exception as e:
         print("---------Error post_query---------")
-        print(e)
+        logging.error(e, exc_info=True)
         print("---------Error post_query end---------")
         raise HTTPException(status_code=500, detail="Internal Service Error")
 

@@ -33,6 +33,8 @@ export const useFileStore = defineStore("filesStore", {
     async fetchFileList() {
       this.fileListLoading = true;
       this.fileListError = null;
+      this.deleteFileMessage = null;
+      this.deleteFileError = null;
 
       try {
         const response = await fetch("/api/files");
@@ -90,6 +92,8 @@ export const useFileStore = defineStore("filesStore", {
     async deleteFile(filename: string) {
       this.deleteFileLoading = true;
       this.deleteFileError = null;
+      this.fileListLoading = true;
+      this.fileListError = null;
 
       try {
         const response = await fetch(`/api/files/${filename}`, {
