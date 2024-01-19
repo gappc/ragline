@@ -14,12 +14,12 @@ services:
     - --scheme
     - http
     image: semitechnologies/weaviate:1.23.0
+    restart: unless-stopped
     expose:
     - "8080"
     - "50051"
     volumes:
     - ./.cache/weaviate:/var/lib/weaviate
-    restart: on-failure:0
     networks:
     - ragline
     environment:
@@ -35,6 +35,7 @@ services:
     build:
       context: ./better_example
       dockerfile: ./Dockerfile
+    restart: unless-stopped
     expose:
     - "9000"
     volumes:
@@ -53,5 +54,6 @@ services:
     build:
       context: ./ui-example
       dockerfile: ./Dockerfile
+    restart: unless-stopped
     networks:
     - ragline
