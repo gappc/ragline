@@ -2,7 +2,7 @@ import os
 from os.path import isfile, join
 
 from pathlib import Path
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -147,6 +147,19 @@ async def upsert_files(files: list[UploadFile]):
 @app.get("/files")
 async def get_files():
     return do_get_files(DOCS_PATH)
+
+
+@app.get("/files/{filename}")
+async def get_file(filename: str):
+    path = DOCS_PATH + "/" + filename
+
+    try:
+        return FileResponse(path=path, filename=filename)
+    except Exception as e:
+        print("---------Error get_file---------")
+        print(e)
+        print("---------Error get_file end---------")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @app.delete("/files/{filename}")

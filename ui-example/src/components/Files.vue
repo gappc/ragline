@@ -12,7 +12,12 @@
           gap: 1rem;
         "
       >
-        <div style="width: 40rem; text-align: left">{{ file.name }}</div>
+        <a
+          :href="`/api/files/${file.name}`"
+          target="_blank"
+          style="width: 40rem; text-align: left"
+          >{{ file.name }}</a
+        >
         <div>
           <span>{{ file.size / 1e6 }} MB</span>
           <button @click="deleteFile(file.name)">Delete</button>
