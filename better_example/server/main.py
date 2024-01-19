@@ -1,11 +1,13 @@
 import os
 
 from pathlib import Path
+from typing import Annotated
 from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from server.auth import get_current_username, fake_users_db
 from server.middlewares import RequestIdInjectionMiddleware
 
 from vector_store.weaviate_client import client, weaviate_collection_name
@@ -35,8 +37,14 @@ load_dotenv()
 DOCS_PATH = os.getenv("DOCS_PATH", "./.cache/docs")
 TMP_PATH = os.getenv("TMP_PATH", "./.cache/tmp")
 
-Path(DOCS_PATH).mkdir(exist_ok=True)
 Path(TMP_PATH).mkdir(exist_ok=True)
+for username in fake_users_db:
+    Path(TMP_PATH + "/" + username).mkdir(exist_ok=True)
+
+Path(DOCS_PATH).mkdir(exist_ok=True)
+for username in fake_users_db:
+    Path(DOCS_PATH + "/" + username).mkdir(exist_ok=True)
+
 
 bearer_scheme = HTTPBearer()
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
@@ -54,8 +62,10 @@ app.add_middleware(RequestIdInjectionMiddleware)
 
 
 @app.get("/hello")
-async def hello():
-    return "Hello World!!!!"
+async def hello(
+    username: Annotated[str, Depends(get_current_username)],
+):
+    return "Hello " + username
 
 
 from .utils import do_query, do_upsert_file
@@ -63,13 +73,14 @@ from .utils import do_query, do_upsert_file
 
 @app.post("/query")
 async def post_query(
+    username: Annotated[str, Depends(get_current_username)],
     request: QueryRequest = Body(...),
 ):
     try:
         logger.info("-----------------got request-----------------")
         logger.info(request)
         logger.info("-----------------got response-----------------")
-        response = do_query(request.queries[0].query)
+        response = do_query(username, request.queries[0].query)
         logger.info("-------------------------------------------")
         logger.info("response source nodes length: {}", len(response.source_nodes))
         # We assume that there is a streamable response if there are source nodes
@@ -81,7 +92,7 @@ async def post_query(
         async def gen():
             yield b"No documents found that match your query. Maybe you need to upload some documents first?"
 
-        return StreamingResponse(gen(), media_type="text/event-stream", status_code=404)
+        return StreamingResponse(gen(), media_type="text/event-stream", status_code=500)
 
     except Exception as e:
         logger.error("---------Error post_query---------")
@@ -90,19 +101,28 @@ async def post_query(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
+def compute_path(base, username, filename):
+    return base + "/" + username + "/" + filename
+
+
 @app.post("/files")
-async def upsert_files(files: list[UploadFile]):
+async def upsert_files(
+    # TODO: need to implement multi tenant datastore (i.e. user1 can't see user2's files),
+    # most probably by using different dirs
+    username: Annotated[str, Depends(get_current_username)],
+    files: list[UploadFile],
+):
     try:
         for file in files:
-            tmp_file_path = TMP_PATH + "/" + file.filename
-            dest_file_path = DOCS_PATH + "/" + file.filename
+            tmp_file_path = compute_path(TMP_PATH, username, file.filename)
+            dest_file_path = compute_path(DOCS_PATH, username, file.filename)
             logger.info("Creating file: {}", tmp_file_path)
             with open(tmp_file_path, "wb") as f:
                 shutil.copyfileobj(file.file, f)
 
                 logger.info("File created: {}, now ingesting", tmp_file_path)
 
-                result = do_upsert_file(tmp_file_path)
+                result = do_upsert_file(username, tmp_file_path)
 
                 logger.info(
                     "Indexing complete for file {}, now moving to folder ",
@@ -126,13 +146,17 @@ async def upsert_files(files: list[UploadFile]):
 
 
 @app.get("/files")
-async def get_files():
-    return do_get_files(DOCS_PATH)
+async def get_files(
+    username: Annotated[str, Depends(get_current_username)],
+):
+    return do_get_files(DOCS_PATH + "/" + username)
 
 
 @app.get("/files/{filename}")
-async def get_file(filename: str):
-    path = DOCS_PATH + "/" + filename
+async def get_file(
+    username: Annotated[str, Depends(get_current_username)], filename: str
+):
+    path = compute_path(DOCS_PATH, username, filename)
 
     try:
         return FileResponse(path=path, filename=filename)
@@ -144,9 +168,11 @@ async def get_file(filename: str):
 
 
 @app.delete("/files/{filename}")
-async def delete_file(filename: str):
+async def delete_file(
+    username: Annotated[str, Depends(get_current_username)], filename: str
+):
     try:
-        path = DOCS_PATH + "/" + filename
+        path = DOCS_PATH + "/" + username + "/" + filename
 
         logger.info("Deleting file: {}", path)
 

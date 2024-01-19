@@ -2,37 +2,41 @@
   <div>
     <div>
       <h2>Upload file</h2>
-      <input ref="fileInput" type="file" multiple @change="handleFileUpload" />
-      <button @click="handleFileUpload">Upload</button>
+      <input ref="fileInput" type="file" multiple @change="computeHasFiles" />
+      <button
+        @click="handleFileUpload"
+        :disabled="!hasFiles"
+        :class="[{ 'opacity-50': !hasFiles }]"
+      >
+        Upload
+      </button>
     </div>
-    <div v-if="uploadFileLoading">Uploading...</div>
-    <div v-if="uploadFileMessage" class="text-success">
-      {{ uploadFileMessage }}
-    </div>
-    <div v-if="uploadFileError" class="text-error">{{ uploadFileError }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { storeToRefs } from "pinia";
 import { useFileStore } from "../modules/files/filesStore";
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
-const { uploadFileMessage, uploadFileError, uploadFileLoading } = storeToRefs(
-  useFileStore()
-);
+const hasFiles = ref(false);
+
+const computeHasFiles = () => {
+  const files = fileInput.value?.files;
+  hasFiles.value = files != null && Object.keys(files).length > 0;
+};
 
 const handleFileUpload = async () => {
-  console.log("handleFileUpload", fileInput.value?.files);
-
   const files = fileInput.value?.files;
-  if (files == null) {
+
+  if (!hasFiles) {
+    console.log("No files selected");
     return;
   }
-  const filesToUpload = Array.from(files);
+
+  const filesToUpload = Array.from(files!);
   await useFileStore().uploadFiles(filesToUpload);
-  await useFileStore().fetchFileList();
+  await useFileStore().fetchFiles();
 };
 </script>

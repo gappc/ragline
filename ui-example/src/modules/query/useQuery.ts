@@ -1,5 +1,8 @@
 import { ref } from "vue";
+import { client, parseEventStream } from "../api/client";
+import { errorToMessage } from "../api/responseError";
 import { QueryBody } from "./types";
+import { useMessageStore } from "../messages/messageStore";
 
 const abortController = ref<AbortController | null>(null);
 
@@ -26,37 +29,20 @@ export const useQuery = () => {
     };
 
     try {
-      const response = await fetch("/api/query", {
+      const response = await client("/api/query", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(body),
         signal: abortController.value.signal,
       });
 
-      if (response.status >= 400) {
-        console.log("Error:", response);
-        const message = {
-          status: response.status,
-          statusText: response.statusText,
-          body: await response.text(),
-        };
-        throw new Error(JSON.stringify(message));
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
-      while (true) {
-        const { value, done } = await reader!.read();
-        if (done) {
-          break;
-        }
-        const decodedValue = decoder.decode(value);
-        console.log("Received", decodedValue);
-        submitQueryMessage.value += decodedValue;
+      for await (const chunk of parseEventStream(response)) {
+        submitQueryMessage.value += chunk;
       }
     } catch (error) {
-      submitQueryError.value =
-        error instanceof Error ? error.message : JSON.stringify(error);
+      useMessageStore().setError(errorToMessage(error));
     } finally {
       submitQueryLoading.value = false;
     }

@@ -1,13 +1,12 @@
 <template>
   <div class="border rounded p-2">
     <h2>Files</h2>
-    <button @click="fetchFileList">Load File List</button>
     <div class="flex flex-col gap-1 max-h-80 overflow-y-auto py-4">
       <div v-for="file in files" class="flex justify-between items-center">
         <a
           :href="`/api/files/${file.name}`"
           target="_blank"
-          class="text-left"
+          class="overflow-auto"
           >{{ file.name }}</a
         >
         <div class="flex items-center gap-2">
@@ -16,17 +15,6 @@
         </div>
       </div>
     </div>
-    <div v-if="fileListLoading">Loading...</div>
-    <div v-if="fileListMessage" class="text-success">
-      {{ fileListMessage }}
-    </div>
-    <div v-if="fileListError" class="text-error">{{ fileListError }}</div>
-
-    <div v-if="deleteFileLoading">Deleting...</div>
-    <div v-if="deleteFileMessage" class="text-success">
-      {{ deleteFileMessage }}
-    </div>
-    <div v-if="deleteFileError" class="text-error">{{ deleteFileError }}</div>
   </div>
 </template>
 
@@ -34,15 +22,10 @@
 import { storeToRefs } from "pinia";
 import { useFileStore } from "../modules/files/filesStore";
 
-const {
-  files,
-  deleteFileError,
-  deleteFileLoading,
-  deleteFileMessage,
-  fileListError,
-  fileListLoading,
-  fileListMessage,
-} = storeToRefs(useFileStore());
+const { files } = storeToRefs(useFileStore());
 
-const { fetchFileList, deleteFile } = useFileStore();
+const deleteFile = async (fileName: string) => {
+  await useFileStore().deleteFile(fileName);
+  await useFileStore().fetchFiles();
+};
 </script>
