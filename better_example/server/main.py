@@ -1,12 +1,12 @@
 import os
-from os.path import isfile, join
 
 from pathlib import Path
 from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
-from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from server.middlewares import RequestIdInjectionMiddleware
 
 from vector_store.weaviate_client import client, weaviate_collection_name
 from llama_index.vector_stores.weaviate_utils import (
@@ -15,14 +15,11 @@ from llama_index.vector_stores.weaviate_utils import (
 import json
 
 import logging
-import sys
+from log.custom_logger import logger, build_stdout_handler
 
 # Configure logging
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
-
-
-from contextlib import asynccontextmanager
+logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
+logging.getLogger().addHandler(build_stdout_handler())
 
 from .files import do_get_files, do_delete_file
 import shutil
@@ -53,33 +50,7 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_sc
 
 
 app = FastAPI()
-# app = FastAPI(dependencies=[Depends(validate_token)])
-
-origins = [
-    "http://localhost:5173",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
-
-# # Create a sub-application, in order to access just the query endpoint in an OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
-# sub_app = FastAPI(
-#     title="Retrieval Plugin API",
-#     description="A retrieval API for querying and filtering documents based on natural language queries and metadata",
-#     version="1.0.0",
-#     servers=[{"url": "https://your-app-url.com"}],
-#     dependencies=[Depends(validate_token)],
-# )
-# app.mount("/sub", sub_app)
-
-# from .llm import query
+app.add_middleware(RequestIdInjectionMiddleware)
 
 
 @app.get("/hello")
@@ -95,13 +66,12 @@ async def post_query(
     request: QueryRequest = Body(...),
 ):
     try:
-        print("-----------------got request-----------------")
-        print(request)
-        print("-----------------got response-----------------")
+        logger.info("-----------------got request-----------------")
+        logger.info(request)
+        logger.info("-----------------got response-----------------")
         response = do_query(request.queries[0].query)
-        # print(response)
-        print("-------------------------------------------")
-        print("response source nodes length: ", len(response.source_nodes))
+        logger.info("-------------------------------------------")
+        logger.info("response source nodes length: {}", len(response.source_nodes))
         # We assume that there is a streamable response if there are source nodes
         if len(response.source_nodes) > 0:
             return StreamingResponse(
@@ -114,9 +84,9 @@ async def post_query(
         return StreamingResponse(gen(), media_type="text/event-stream", status_code=404)
 
     except Exception as e:
-        print("---------Error post_query---------")
-        logging.error(e, exc_info=True)
-        print("---------Error post_query end---------")
+        logger.error("---------Error post_query---------")
+        logger.exception(e)
+        logger.error("---------Error post_query end---------")
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
@@ -126,16 +96,16 @@ async def upsert_files(files: list[UploadFile]):
         for file in files:
             tmp_file_path = TMP_PATH + "/" + file.filename
             dest_file_path = DOCS_PATH + "/" + file.filename
-            print("Creating file: %s" % tmp_file_path)
+            logger.info("Creating file: {}", tmp_file_path)
             with open(tmp_file_path, "wb") as f:
                 shutil.copyfileobj(file.file, f)
 
-                print("File created: %s, now ingesting" % tmp_file_path)
+                logger.info("File created: {}, now ingesting", tmp_file_path)
 
                 result = do_upsert_file(tmp_file_path)
 
-                print(
-                    "Indexing complete for file %s, now moving to folder ",
+                logger.info(
+                    "Indexing complete for file {}, now moving to folder ",
                     tmp_file_path,
                 )
 
@@ -147,9 +117,9 @@ async def upsert_files(files: list[UploadFile]):
         return "OK"
 
     except Exception as e:
-        print("---------Error upsert_file---------")
-        print(e)
-        print("---------Error upsert_file end---------")
+        logger.error("---------Error upsert_file---------")
+        logger.exception(e)
+        logger.error("---------Error upsert_file end---------")
         raise HTTPException(status_code=500, detail=f"str({e})")
     finally:
         file.file.close()
@@ -167,9 +137,9 @@ async def get_file(filename: str):
     try:
         return FileResponse(path=path, filename=filename)
     except Exception as e:
-        print("---------Error get_file---------")
-        print(e)
-        print("---------Error get_file end---------")
+        logger.error("---------Error get_file---------")
+        logger.exception(e)
+        logger.error("---------Error get_file end---------")
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
@@ -178,10 +148,10 @@ async def delete_file(filename: str):
     try:
         path = DOCS_PATH + "/" + filename
 
-        print("Deleting file: %s" % path)
+        logger.info("Deleting file: {}", path)
 
         do_delete_file(path)
-        print("File deleted: %s, now removing from index" % path)
+        logger.info("File deleted: {}, now removing from index", path)
 
         where_filter = {
             "path": ["file_path"],
@@ -198,25 +168,19 @@ async def delete_file(filename: str):
         query_result = query.do()
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[weaviate_collection_name]
-        print(json.dumps(entries, indent=2))
+        logger.info(json.dumps(entries, indent=2))
         delete_result = client.batch.delete_objects(
             weaviate_collection_name, where_filter
         )
-        print("Delete result: ", delete_result)
-        print("Removing from index success")
+        logger.info("Delete result: ", delete_result)
+        logger.info("Removing from index success")
 
         return "OK"
     except Exception as e:
-        print("---------Error delete_file---------")
-        print(e)
-        print("---------Error delete_file end---------")
+        logger.error("---------Error delete_file---------")
+        logger.exception(e)
+        logger.error("---------Error delete_file end---------")
         raise HTTPException(status_code=500, detail=f"str({e})")
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Starting up...")
-    yield
 
 
 def start():

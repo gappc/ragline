@@ -5,6 +5,7 @@ from llama_index.vector_stores import WeaviateVectorStore
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
+from log.custom_logger import logger
 
 load_dotenv()
 
@@ -13,7 +14,9 @@ weaviate_url = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 
 # Check if OPENAI_API_KEY environment variable is set, otherwise exit
 if weaviate_collection_name is None:
-    print("WEAVIATE_COLLECTION_NAME environment variable must be set, terminating...")
+    logger.info(
+        "WEAVIATE_COLLECTION_NAME environment variable must be set, terminating..."
+    )
     exit(1)
 
 client = weaviate.Client(weaviate_url)
