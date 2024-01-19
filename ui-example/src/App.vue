@@ -23,8 +23,14 @@ interface QueryBody {
 }
 
 const response = ref("");
+const abortController = ref<AbortController | null>(null);
 
 const submit = async (query: string) => {
+  if (abortController.value != null && !abortController.value.signal.aborted) {
+    abortController.value.abort();
+  }
+  abortController.value = new AbortController();
+
   response.value = "";
 
   const body: QueryBody = {
@@ -35,6 +41,7 @@ const submit = async (query: string) => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: abortController.value.signal,
   });
   const reader = fetchResult.body?.getReader();
   const decoder = new TextDecoder("utf-8");
@@ -45,7 +52,6 @@ const submit = async (query: string) => {
     console.log("Received", decodedValue);
     response.value += decodedValue;
   }
-  // response.value = await fetchResult.json();
 };
 </script>
 
