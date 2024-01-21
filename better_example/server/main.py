@@ -1,56 +1,21 @@
-import json
 import logging
-import os
-from pathlib import Path
 from typing import Annotated
 
 import uvicorn
 from fastapi import Body, Depends, FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from llama_index.vector_stores.weaviate_utils import parse_get_response
 from log.custom_logger import build_stdout_handler, logger
-from server.auth import fake_users_db, get_current_username
-from server.files import do_delete_file, do_get_files, do_upsert_file
-from server.index import do_query
+from server.auth import get_current_username
 from server.middlewares import RequestIdInjectionMiddleware
-from vector_store.weaviate_client import client, weaviate_collection_name
+from utils.files import compute_docs_path, do_delete_file, do_get_files, do_upsert_file
+from utils.index import index_query_by_term
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
 logging.getLogger().addHandler(build_stdout_handler())
 
 
-import shutil
-
-from dotenv import load_dotenv
-
 from .api import QueryRequest
-
-load_dotenv()
-
-DOCS_PATH = os.getenv("DOCS_PATH", "./.cache/docs")
-TMP_PATH = os.getenv("TMP_PATH", "./.cache/tmp")
-
-Path(TMP_PATH).mkdir(exist_ok=True)
-for username in fake_users_db:
-    Path(TMP_PATH + "/" + username).mkdir(exist_ok=True)
-
-Path(DOCS_PATH).mkdir(exist_ok=True)
-for username in fake_users_db:
-    Path(DOCS_PATH + "/" + username).mkdir(exist_ok=True)
-
-
-bearer_scheme = HTTPBearer()
-BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
-# assert BEARER_TOKEN is not None
-
-
-def validate_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    if credentials.scheme != "Bearer" or credentials.credentials != BEARER_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid or missing token")
-    return credentials
-
 
 app = FastAPI()
 app.add_middleware(RequestIdInjectionMiddleware)
@@ -72,9 +37,10 @@ async def post_query(
         logger.info("-----------------got request-----------------")
         logger.info(request)
         logger.info("-----------------got response-----------------")
-        response = do_query(username, request.queries[0].query)
+        response = index_query_by_term(username, request.queries[0].query)
         logger.info("-------------------------------------------")
         logger.info("response source nodes length: {}", len(response.source_nodes))
+
         # We assume that there is a streamable response if there are source nodes
         if len(response.source_nodes) > 0:
             return StreamingResponse(
@@ -93,41 +59,15 @@ async def post_query(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
-def compute_path(base, username, filename):
-    return base + "/" + username + "/" + filename
-
-
 @app.post("/files")
 async def upsert_files(
-    # TODO: need to implement multi tenant datastore (i.e. user1 can't see user2's files),
-    # most probably by using different dirs
     username: Annotated[str, Depends(get_current_username)],
     files: list[UploadFile],
 ):
     try:
         for file in files:
-            tmp_file_path = compute_path(TMP_PATH, username, file.filename)
-            dest_file_path = compute_path(DOCS_PATH, username, file.filename)
-            logger.info("Creating file: {}", tmp_file_path)
-            with open(tmp_file_path, "wb") as f:
-                shutil.copyfileobj(file.file, f)
-
-                logger.info("File created: {}, now ingesting", tmp_file_path)
-
-                result = do_upsert_file(username, tmp_file_path)
-
-                logger.info(
-                    "Indexing complete for file {}, now moving to folder ",
-                    tmp_file_path,
-                )
-
-                shutil.move(
-                    tmp_file_path,
-                    dest_file_path,
-                )
-
+            do_upsert_file(username, file.filename, file.file)
         return "OK"
-
     except Exception as e:
         logger.error("---------Error upsert_file---------")
         logger.exception(e)
@@ -141,16 +81,21 @@ async def upsert_files(
 async def get_files(
     username: Annotated[str, Depends(get_current_username)],
 ):
-    return do_get_files(DOCS_PATH + "/" + username)
+    try:
+        return do_get_files(username)
+    except Exception as e:
+        logger.error("---------Error get_files---------")
+        logger.exception(e)
+        logger.error("---------Error get_files end---------")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @app.get("/files/{filename}")
 async def get_file(
     username: Annotated[str, Depends(get_current_username)], filename: str
 ):
-    path = compute_path(DOCS_PATH, username, filename)
-
     try:
+        path = compute_docs_path(username, filename)
         return FileResponse(path=path, filename=filename)
     except Exception as e:
         logger.error("---------Error get_file---------")
@@ -164,35 +109,7 @@ async def delete_file(
     username: Annotated[str, Depends(get_current_username)], filename: str
 ):
     try:
-        path = DOCS_PATH + "/" + username + "/" + filename
-
-        logger.info("Deleting file: {}", path)
-
-        do_delete_file(path)
-        logger.info("File deleted: {}, now removing from index", path)
-
-        where_filter = {
-            "path": ["file_path"],
-            "operator": "Equal",
-            "valueText": filename,
-        }
-        query = (
-            client.query.get(
-                weaviate_collection_name, properties=["ref_doc_id", "file_path"]
-            )
-            .with_where(where_filter)
-            .with_limit(10000)  # 10,000 is the max weaviate can fetch
-        )
-        query_result = query.do()
-        parsed_result = parse_get_response(query_result)
-        entries = parsed_result[weaviate_collection_name]
-        logger.info(json.dumps(entries, indent=2))
-        delete_result = client.batch.delete_objects(
-            weaviate_collection_name, where_filter
-        )
-        logger.info("Delete result: ", delete_result)
-        logger.info("Removing from index success")
-
+        do_delete_file(username, filename)
         return "OK"
     except Exception as e:
         logger.error("---------Error delete_file---------")
