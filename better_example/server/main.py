@@ -1,25 +1,20 @@
+import json
+import logging
 import os
-
 from pathlib import Path
 from typing import Annotated
-from fastapi.responses import FileResponse, StreamingResponse
-import uvicorn
-from fastapi import FastAPI, HTTPException, Depends, Body, UploadFile
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from server.auth import get_current_username, fake_users_db
-from server.files import do_get_files, do_delete_file, do_upsert_file
+import uvicorn
+from fastapi import Body, Depends, FastAPI, HTTPException, UploadFile
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from llama_index.vector_stores.weaviate_utils import parse_get_response
+from log.custom_logger import build_stdout_handler, logger
+from server.auth import fake_users_db, get_current_username
+from server.files import do_delete_file, do_get_files, do_upsert_file
 from server.index import do_query
 from server.middlewares import RequestIdInjectionMiddleware
-
 from vector_store.weaviate_client import client, weaviate_collection_name
-from llama_index.vector_stores.weaviate_utils import (
-    parse_get_response,
-)
-import json
-
-import logging
-from log.custom_logger import logger, build_stdout_handler
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
@@ -28,11 +23,9 @@ logging.getLogger().addHandler(build_stdout_handler())
 
 import shutil
 
-from .api import (
-    QueryRequest,
-)
-
 from dotenv import load_dotenv
+
+from .api import QueryRequest
 
 load_dotenv()
 
