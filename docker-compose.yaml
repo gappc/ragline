@@ -44,6 +44,7 @@ services:
     - ./.cache/docs:/app/.cache/docs
     - ./.cache/tmp:/app/.cache/tmp
     - ./.cache/huggingface:/app/.cache/huggingface
+    - ./userdb.json:/app/userdb.json
     networks:
     - ragline
     environment:

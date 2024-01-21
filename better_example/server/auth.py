@@ -1,30 +1,14 @@
+import json
 import secrets
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-
 from log.custom_logger import logger
 
-import json
-
-fake_users_db = {
-    "chris": {
-        "username": "chris",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "password": "nooneknows",
-        "disabled": False,
-    },
-    "test": {
-        "username": "test",
-        "full_name": "test Doe",
-        "email": "testdoe@example.com",
-        "password": "123456",
-        "disabled": False,
-    },
-}
-
+# Load user database
+with open("userdb.json") as f:
+    fake_users_db = json.load(f)
 
 security = HTTPBasic()
 
@@ -57,13 +41,11 @@ def get_current_username(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
-            # headers={"WWW-Authenticate": "Basic"},
         )
 
     if not (is_correct_username and is_correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
-            # headers={"WWW-Authenticate": "Basic"},
         )
     return credentials.username

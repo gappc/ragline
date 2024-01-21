@@ -1,18 +1,26 @@
 # Ragline
 
-The best way to run this project is with docker compose:
+## Start
 
-> The docker compose file doesn't expose any port by default. You can set the ports in a `docker-compose.override.yaml` file. Use `docker-compose.override.yaml.example` as a template.
+First you need to provide a `userdb.json` file in the root directory. This file contains the user credentials for the web interface. You can use the `userdb.json.example` file as a template.
+
+Then start the project using docker compose (recommended):
 
 ```bash
 # Build and run docker containers
 docker compose build && docker compose up
+```
 
+The docker compose file doesn't expose any port by default. You can set the ports in a `docker-compose.override.yaml` file. Use `docker-compose.override.yaml.example` as a template. If you use the template, the frontend will be available at `http://localhost:7824/`.
+
+```bash
 # Open browser
-http://localhost
+http://localhost:7824/
 ```
 
 ## Manual steps
+
+> Note that the manual steps are not recommended, you may encounter problems. **Use the docker compose file instead**.
 
 ```bash
 # Activate virtual environment
