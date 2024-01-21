@@ -47,4 +47,4 @@ def do_delete_file(path: str):
 
 
 if __name__ == "__main__":
-    do_get_files("/home/chris/projects/ml/rag/ragline/.cache/docs")
+    do_get_files("./docs")
