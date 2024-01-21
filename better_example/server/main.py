@@ -6,8 +6,10 @@ from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.middleware.cors import CORSMiddleware
+
 from server.auth import get_current_username, fake_users_db
+from server.files import do_get_files, do_delete_file, do_upsert_file
+from server.index import do_query
 from server.middlewares import RequestIdInjectionMiddleware
 
 from vector_store.weaviate_client import client, weaviate_collection_name
@@ -23,7 +25,7 @@ from log.custom_logger import logger, build_stdout_handler
 logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
 logging.getLogger().addHandler(build_stdout_handler())
 
-from .files import do_get_files, do_delete_file
+
 import shutil
 
 from .api import (
@@ -66,9 +68,6 @@ async def hello(
     username: Annotated[str, Depends(get_current_username)],
 ):
     return "Hello " + username
-
-
-from .utils import do_query, do_upsert_file
 
 
 @app.post("/query")

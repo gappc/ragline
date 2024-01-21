@@ -1,6 +1,9 @@
 # import python modules
 import os
 
+from llama_index import SimpleDirectoryReader
+from server.index import do_index
+
 
 def do_get_files(path: str):
     # get the path p, sub_directory sub_dir,
@@ -40,6 +43,11 @@ def do_get_files(path: str):
     #     print("{} : {}MB".format(os.path.join(path, f), round(s / (1024 * 1024), 3)))
     files = list(map(lambda s: {"name": s[0], "size": s[1]}, size_of_file))
     return files
+
+
+def do_upsert_file(username: str, path: str):
+    documents = SimpleDirectoryReader(input_files=[path]).load_data()
+    return do_index(username, documents)
 
 
 def do_delete_file(path: str):
