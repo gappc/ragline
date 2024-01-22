@@ -4,7 +4,7 @@ import shutil
 from typing import BinaryIO
 
 from llama_index import SimpleDirectoryReader
-from log.custom_logger import logger
+from logger.custom_logger import logger
 from server.auth import fake_users_db
 from utils.index import index_add_documents, index_delete_by_path
 from utils.paths import (

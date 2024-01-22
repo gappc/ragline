@@ -1,4 +1,4 @@
-from log.custom_logger import logger
+from logger.custom_logger import logger
 import uuid
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send

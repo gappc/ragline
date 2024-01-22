@@ -3,6 +3,8 @@
 .docs_for_test
 __pycache__
 
+/log/query.log
+
 .env
 docker-compose.override.yml
 userdb.json

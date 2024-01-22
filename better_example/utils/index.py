@@ -3,7 +3,7 @@ from typing import List
 from llama_index import Document, VectorStoreIndex
 from llama_index.vector_stores.types import ExactMatchFilter, MetadataFilters
 from llama_index.vector_stores.weaviate_utils import parse_get_response
-from log.custom_logger import logger
+from logger.custom_logger import logger
 from utils.context import index, service_context, storage_context, vector_store
 from vector_store.weaviate_client import client, weaviate_collection_name
 

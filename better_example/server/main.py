@@ -1,12 +1,14 @@
 import logging
+from itertools import tee
 from typing import Annotated
 
 import uvicorn
-from fastapi import Body, Depends, FastAPI, HTTPException, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
-from log.custom_logger import build_stdout_handler, logger
+from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from logger.custom_logger import build_stdout_handler, logger, new_query_logger
 from server.auth import get_current_username
 from server.middlewares import RequestIdInjectionMiddleware
+from server.utils import log_response, stream_response
 from utils.files import compute_docs_path, do_delete_file, do_get_files, do_upsert_file
 from utils.index import index_query_by_term
 
@@ -31,31 +33,42 @@ async def hello(
 @app.post("/query")
 async def post_query(
     username: Annotated[str, Depends(get_current_username)],
+    background_tasks: BackgroundTasks,
     request: QueryRequest = Body(...),
 ):
+    # Create a new query logger
+    [query_id, query_logger] = new_query_logger()
     try:
-        logger.info("-----------------got request-----------------")
-        logger.info(request)
-        logger.info("-----------------got response-----------------")
+        query_logger.info("Username: {}", username)
+        query_logger.info("Request: {}", request)
+
+        # Do the query
         response = index_query_by_term(username, request.queries[0].query)
-        logger.info("-------------------------------------------")
-        logger.info("response source nodes length: {}", len(response.source_nodes))
 
-        # We assume that there is a streamable response if there are source nodes
-        if len(response.source_nodes) > 0:
-            return StreamingResponse(
-                response.response_gen, media_type="text/event-stream"
-            )
+        query_logger.info("Source nodes: {}", response.source_nodes)
+        query_logger.info("Metadata: {}", response.metadata)
 
-        async def gen():
-            yield b"No documents found that match your query. Maybe you need to upload some documents first?"
+        # Create one stream for the response and one for logging
+        [response_stream, response_stream_log] = (
+            # If no documents were found, return the streams from string
+            [
+                "No documents found that match your query. Maybe you need to upload some documents first?",
+                "No documents found that match your query",
+            ]
+            if response.metadata is None
+            # Otherwise, duplicate the streaming response
+            else tee(response.response_gen, 2)
+        )
 
-        return StreamingResponse(gen(), media_type="text/event-stream", status_code=500)
+        # Log the response after the response was send
+        background_tasks.add_task(log_response, query_id, response_stream_log)
 
+        # Return response stream
+        return stream_response(query_id, response_stream)
     except Exception as e:
-        logger.error("---------Error post_query---------")
-        logger.exception(e)
-        logger.error("---------Error post_query end---------")
+        query_logger.error("---------Error post_query---------")
+        query_logger.exception(e)
+        query_logger.error("---------Error post_query end---------")
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 

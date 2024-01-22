@@ -5,7 +5,7 @@ from llama_index.vector_stores import WeaviateVectorStore
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-from log.custom_logger import logger
+from logger.custom_logger import logger
 
 load_dotenv()
 

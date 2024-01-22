@@ -10,7 +10,7 @@ COPY environment.yml .
 RUN conda env create -f environment.yml
 RUN conda activate ragline
 
-COPY log log/
+COPY logger logger/
 COPY server server/
 COPY utils utils/
 COPY vector_store vector_store/
