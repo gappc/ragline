@@ -10,7 +10,10 @@
       <textarea class="w-full px-4 py-3 rounded" rows="7" disabled>{{
         submitQueryMessage
       }}</textarea>
-      <Feedback :query-id="queryId" />
+      <div class="text-sm text-gray-500">
+        <span v-if="queryId">Query ID: {{ queryId }}</span>
+      </div>
+      <Feedback v-if="queryId" :query-id="queryId" />
     </div>
     <div v-if="submitQueryLoading">Loading...</div>
     <div v-if="submitQueryError" class="text-error">{{ submitQueryError }}</div>

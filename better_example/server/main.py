@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
 logging.getLogger().addHandler(build_stdout_handler())
 
 
-from .api import FeedbackSentimentRequest, QueryRequest
+from .api import FeedbackRequest, QueryRequest, SentimentRequest
 
 app = FastAPI()
 app.add_middleware(RequestIdInjectionMiddleware)
@@ -136,14 +136,25 @@ async def delete_file(
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
-@app.post("/feedback/sentiment/{query_id}")
-async def feedback_sentiment(
+@app.post("/sentiment/{query_id}")
+async def post_sentiment(
     username: Annotated[str, Depends(get_current_username)],
     query_id: str,
-    request: FeedbackSentimentRequest = Body(...),
+    request: SentimentRequest = Body(...),
 ):
     query_logger = query_logger_for_qid(query_id)
-    query_logger.info("Feedback sentiment: {}", request.sentiment)
+    query_logger.info("Sentiment: {}", request.sentiment)
+    return "OK"
+
+
+@app.post("/feedback/{query_id}")
+async def post_feedback(
+    username: Annotated[str, Depends(get_current_username)],
+    query_id: str,
+    request: FeedbackRequest = Body(...),
+):
+    query_logger = query_logger_for_qid(query_id)
+    query_logger.info("Feedback: {}", request.feedback)
     return "OK"
 
 

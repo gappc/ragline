@@ -36,5 +36,9 @@ class DeleteResponse(BaseModel):
     success: bool
 
 
-class FeedbackSentimentRequest(BaseModel):
+class SentimentRequest(BaseModel):
     sentiment: str
+
+
+class FeedbackRequest(BaseModel):
+    feedback: str
