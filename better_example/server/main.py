@@ -5,7 +5,12 @@ from typing import Annotated
 import uvicorn
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from logger.custom_logger import build_stdout_handler, logger, new_query_logger
+from logger.custom_logger import (
+    build_stdout_handler,
+    logger,
+    new_query_logger,
+    query_logger_for_qid,
+)
 from server.auth import get_current_username
 from server.middlewares import RequestIdInjectionMiddleware
 from server.utils import log_response, stream_response
@@ -17,7 +22,7 @@ logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
 logging.getLogger().addHandler(build_stdout_handler())
 
 
-from .api import QueryRequest
+from .api import FeedbackSentimentRequest, QueryRequest
 
 app = FastAPI()
 app.add_middleware(RequestIdInjectionMiddleware)
@@ -129,6 +134,17 @@ async def delete_file(
         logger.exception(e)
         logger.error("---------Error delete_file end---------")
         raise HTTPException(status_code=500, detail=f"str({e})")
+
+
+@app.post("/feedback/sentiment/{query_id}")
+async def feedback_sentiment(
+    username: Annotated[str, Depends(get_current_username)],
+    query_id: str,
+    request: FeedbackSentimentRequest = Body(...),
+):
+    query_logger = query_logger_for_qid(query_id)
+    query_logger.info("Feedback sentiment: {}", request.sentiment)
+    return "OK"
 
 
 def start():

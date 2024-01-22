@@ -41,6 +41,8 @@ export const useQuery = () => {
       for await (const chunk of parseEventStream(response)) {
         submitQueryMessage.value += chunk;
       }
+
+      return response.headers.get("X-RAGLINE-QUERY-ID");
     } catch (error) {
       useMessageStore().setError(errorToMessage(error));
     } finally {

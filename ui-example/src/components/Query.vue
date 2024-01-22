@@ -10,6 +10,7 @@
       <textarea class="w-full px-4 py-3 rounded" rows="7" disabled>{{
         submitQueryMessage
       }}</textarea>
+      <Feedback :query-id="queryId" />
     </div>
     <div v-if="submitQueryLoading">Loading...</div>
     <div v-if="submitQueryError" class="text-error">{{ submitQueryError }}</div>
@@ -19,9 +20,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useQuery } from "../modules/query/useQuery";
+import Feedback from "./Feedback.vue";
 
 const query = ref("");
-
+const queryId = ref<string | null>();
 const {
   submitQueryMessage,
   submitQueryError,
@@ -29,5 +31,5 @@ const {
   submitQuery,
 } = useQuery();
 
-const submit = () => submitQuery(query.value);
+const submit = async () => (queryId.value = await submitQuery(query.value));
 </script>

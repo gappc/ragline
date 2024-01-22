@@ -29,8 +29,6 @@ export async function* parseEventStream(response: Response) {
       break;
     }
     const decodedValue = decoder.decode(value);
-    console.log("Received", decodedValue);
-    // submitQueryMessage.value += decodedValue;
     yield decodedValue;
   }
 }
