@@ -2,7 +2,7 @@
   <div>
     <div>
       <h2>Query</h2>
-      <input type="text" v-model="queryModel" @keyup.enter="submit" />
+      <input type="text" v-model="query" @keyup.enter="submit" />
       <button @click="submit">Ask</button>
     </div>
     <div>
@@ -21,7 +21,6 @@ import { ref } from "vue";
 import { useQuery } from "../modules/query/useQuery";
 
 const query = ref("");
-const queryModel = ref("");
 
 const {
   submitQueryMessage,
