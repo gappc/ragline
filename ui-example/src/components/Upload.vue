@@ -36,7 +36,9 @@ const handleFileUpload = async () => {
   }
 
   const filesToUpload = Array.from(files!);
+  console.time("upload");
   await useFileStore().uploadFiles(filesToUpload);
+  console.timeEnd("upload");
   await useFileStore().fetchFiles();
 };
 </script>
