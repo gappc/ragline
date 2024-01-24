@@ -10,6 +10,9 @@
       >
         Upload
       </button>
+      <span class="ml-5 opacity-50">
+        This may take some time, please be patient
+      </span>
     </div>
   </div>
 </template>
