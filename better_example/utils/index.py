@@ -39,23 +39,6 @@ def index_add_documents(username: str, documents: List[Document]):
     )
 
 
-def index_query_by_term(username: str, term: str):
-    query_engine = index.as_query_engine(
-        streaming=True,
-        filters=MetadataFilters(
-            filters=[
-                ExactMatchFilter(
-                    key=RAGLINE_USER_KEY,
-                    value=username,
-                )
-            ]
-        ),
-        similarity_top_k=3,
-    )
-    response = query_engine.query(term)
-    return response
-
-
 def index_delete_by_path(username: str, filename: str):
     username_filter = _username_where_filter(username)
     filename_filter = _filename_where_filter(filename)

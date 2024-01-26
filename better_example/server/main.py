@@ -15,7 +15,7 @@ from server.auth import get_current_username
 from server.middlewares import RequestIdInjectionMiddleware
 from server.utils import log_response, stream_response
 from utils.files import compute_docs_path, do_delete_file, do_get_files, do_upsert_file
-from utils.index import index_query_by_term
+from utils.query import query_by_term
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, handlers=[build_stdout_handler()])
@@ -48,7 +48,7 @@ async def post_query(
         query_logger.info("Request: {}", request)
 
         # Do the query
-        response = index_query_by_term(username, request.queries[0].query)
+        response = query_by_term(username, request.queries[0].query)
 
         query_logger.info("Source nodes: {}", response.source_nodes)
         query_logger.info("Metadata: {}", response.metadata)
