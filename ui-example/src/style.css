@@ -33,7 +33,7 @@ button:hover {
 }
 
 input {
-  @apply px-3 py-2 rounded;
+  @apply px-3 py-2 rounded bg-neutral-700;
 }
 
 #app {
