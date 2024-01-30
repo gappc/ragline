@@ -19,7 +19,7 @@ def query_by_term(username: str, term: str):
                 )
             ]
         ),
-        similarity_top_k=3,
+        similarity_top_k=5,
     )
 
     # query_engine = TransformQueryEngine(query_engine, query_transform=hyde)
