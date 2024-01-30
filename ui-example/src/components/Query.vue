@@ -50,7 +50,12 @@ const submit = async () => (queryId.value = await submitQuery(query.value));
 const sources = computed(() =>
   Object.entries(queryResponseSources.value).map(([key, value]) => ({
     file: key,
-    pages: value.map((v) => Number(v)).sort(),
+    pages: value
+      .map((v) => parseInt(v, 10))
+      .sort()
+      // Fixes bug where sort seems to not work properly
+      .reverse()
+      .reverse(),
   }))
 );
 </script>
