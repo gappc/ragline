@@ -7,14 +7,16 @@ import { useMessageStore } from "../messages/messageStore";
 const abortController = ref<AbortController | null>(null);
 
 export const useQuery = () => {
-  const submitQueryMessage = ref("");
-  const submitQueryError = ref("");
-  const submitQueryLoading = ref(false);
+  const queryResponseMessage = ref("");
+  const queryResponseError = ref("");
+  const queryResponseLoading = ref(false);
+  const queryResponseSources = ref<Record<string, string[]>>({});
 
   const submitQuery = async (query: string) => {
-    submitQueryMessage.value = "";
-    submitQueryError.value = "";
-    submitQueryLoading.value = true;
+    queryResponseMessage.value = "";
+    queryResponseError.value = "";
+    queryResponseLoading.value = true;
+    queryResponseSources.value = {};
 
     if (
       abortController.value != null &&
@@ -38,22 +40,33 @@ export const useQuery = () => {
         signal: abortController.value.signal,
       });
 
+      // Try to extract the response source from the headers
+      const responseSourceBase64 = response.headers.get(
+        "X-RAGLINE-RESPONSE-SOURCE"
+      );
+      if (responseSourceBase64 != null) {
+        const responseSource = atob(responseSourceBase64);
+        queryResponseSources.value = JSON.parse(responseSource);
+      }
+
+      // Parse the event stream
       for await (const chunk of parseEventStream(response)) {
-        submitQueryMessage.value += chunk;
+        queryResponseMessage.value += chunk;
       }
 
       return response.headers.get("X-RAGLINE-QUERY-ID");
     } catch (error) {
       useMessageStore().setError(errorToMessage(error));
     } finally {
-      submitQueryLoading.value = false;
+      queryResponseLoading.value = false;
     }
   };
 
   return {
-    submitQueryMessage,
-    submitQueryError,
-    submitQueryLoading,
+    queryResponseMessage,
+    queryResponseError,
+    queryResponseLoading,
+    queryResponseSources,
     submitQuery,
   };
 };
