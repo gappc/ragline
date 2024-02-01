@@ -2,18 +2,22 @@
 import base64
 import json
 from collections import defaultdict
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi.responses import StreamingResponse
+from llama_index.schema import NodeWithScore
 from logger.custom_logger import query_logger_for_qid
 from starlette.responses import ContentStream
+from utils.llm import get_token_counts_as_text
 
 
-def extract_response_source(response_metadata: Dict[str, Any] | None = None):
+def extract_response_source(source_nodes: List[NodeWithScore]):
     response_source = defaultdict(list)
-    if response_metadata:
-        for key, metadata in response_metadata.items():
-            response_source[metadata["file_name"]].append(int(metadata["page_label"]))
+
+    for node in source_nodes:
+        response_source[node.metadata["file_name"]].append(
+            int(node.metadata["page_label"])
+        )
 
     return response_source
 
@@ -39,3 +43,4 @@ def stream_response(
 def log_response(query_id, stream):
     stream_text = "".join(stream)
     query_logger_for_qid(query_id).info("Response: {}", stream_text)
+    query_logger_for_qid(query_id).info(get_token_counts_as_text())

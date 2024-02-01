@@ -52,7 +52,7 @@ async def post_query(
 
         query_logger.info("Source nodes: {}", response.source_nodes)
 
-        response_source = extract_response_source(response.metadata)
+        response_source = extract_response_source(response.source_nodes)
 
         query_logger.info("Response Source nodes short: {}", response_source)
 
@@ -65,7 +65,7 @@ async def post_query(
                 "No documents found that match your query. Maybe you need to upload some documents first?",
                 "No documents found that match your query",
             ]
-            if response.metadata is None
+            if response.source_nodes is None
             # Otherwise, duplicate the streaming response
             else tee(response.response_gen, 2)
         )
