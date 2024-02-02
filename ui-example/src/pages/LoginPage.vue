@@ -2,7 +2,7 @@
   <AppLayout class="flex items-center justify-center">
     <form
       class="flex flex-col gap-4 w-full md:w-[30rem] px-2"
-      @submit.prevent="login"
+      @submit.prevent="loginInternal"
     >
       <InputCustom
         v-model="username"
@@ -25,7 +25,7 @@
           </button>
         </template>
       </InputCustom>
-      <ButtonCustom @click="login">Login</ButtonCustom>
+      <ButtonCustom @click="loginInternal">Login</ButtonCustom>
     </form>
     <div class="mt-2">{{ message ? message : "&nbsp;" }}</div>
   </AppLayout>
@@ -40,7 +40,7 @@ import IconAccountCircle from "../components/svg/IconAccountCircle.vue";
 import IconLock from "../components/svg/IconLock.vue";
 import IconVisibilityOff from "../components/svg/IconVisibilityOff.vue";
 import AppLayout from "../layouts/AppLayout.vue";
-import { useAuthStore } from "../modules/auth/authStore";
+import { login, logout } from "../modules/auth/auth";
 import { useMessageStore } from "../modules/messages/messageStore";
 
 const username = ref("");
@@ -49,8 +49,7 @@ const showPassword = ref(false);
 
 const { message } = storeToRefs(useMessageStore());
 
-const login = async () =>
-  await useAuthStore().login(username.value, token.value);
+const loginInternal = async () => await login(username.value, token.value);
 
-onBeforeMount(() => useAuthStore().logout());
+onBeforeMount(() => logout());
 </script>

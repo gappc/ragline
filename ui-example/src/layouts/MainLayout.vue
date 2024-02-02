@@ -33,10 +33,8 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
 import ButtonCustom from "../components/button/ButtonCustom.vue";
-import { useAuthStore } from "../modules/auth/authStore";
+import { logout } from "../modules/auth/auth";
 import AppLayout from "./AppLayout.vue";
 
 const { name } = useRoute();
-
-const logout = () => useAuthStore().logout();
 </script>

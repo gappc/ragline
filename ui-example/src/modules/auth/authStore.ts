@@ -1,9 +1,7 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { client } from "../api/client";
-import { errorToMessage } from "../api/responseError";
-import { useMessageStore } from "../messages/messageStore";
+import { buildBasicAuthHeader } from "./utils";
 
 const storageKey = "authorization";
 
@@ -28,14 +26,6 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   }
 
-  // Build the basic auth header
-  const buildBasicAuthHeader = (
-    username: string,
-    token: string
-  ): Record<string, string> => ({
-    Authorization: "Basic " + btoa(`${username}:${token}`),
-  });
-
   // Computed property for the basic auth header with the current username and token
   const basicAuthHeader = computed(() =>
     buildBasicAuthHeader(username.value ?? "", token.value ?? "")
@@ -46,46 +36,26 @@ export const useAuthStore = defineStore("authStore", () => {
 
   // Login function. On success, it sets the authorization and redirects to the return URL
   // or the conversations page. On failure, it sets an error message and resets the authorization.
-  const login = async (
-    loginUsername: string,
-    loginToken: string
-  ): Promise<boolean> => {
-    try {
-      await client("/api/hello", {
-        headers: buildBasicAuthHeader(loginUsername, loginToken),
-      });
+  const setCredentials = (nextUsername: string, nextToken: string) => {
+    username.value = nextUsername;
+    token.value = nextToken;
+    authorized.value = true;
 
-      useMessageStore().reset();
+    // Store the authorization in the session storage
+    sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        username: username.value,
+        token: token.value,
+        authorized: true,
+      })
+    );
 
-      // Set the authorization
-      token.value = loginUsername;
-      username.value = loginToken;
-      authorized.value = true;
-
-      // Store the authorization in the session storage
-      sessionStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          username: username.value,
-          token: token.value,
-          authorized: authorized.value.toString(),
-        })
-      );
-
-      // Redirect to the return URL or the conversations page
-      router.push(returnUrl.value || { name: "home" });
-    } catch (error) {
-      useMessageStore().setError(errorToMessage(error));
-      token.value = null;
-      username.value = null;
-      authorized.value = false;
-    }
-
-    return authorized.value;
+    router.push(returnUrl.value || { name: "home" });
   };
 
   // Logout function. It resets the authorization and redirects to the login page.
-  const logout = () => {
+  const removeCredentials = () => {
     token.value = null;
     username.value = null;
     authorized.value = false;
@@ -102,7 +72,7 @@ export const useAuthStore = defineStore("authStore", () => {
   window.addEventListener("storage", function () {
     const storedAuthorization = sessionStorage.getItem(storageKey);
     if (storedAuthorization == null) {
-      logout();
+      removeCredentials();
     }
   });
 
@@ -112,8 +82,8 @@ export const useAuthStore = defineStore("authStore", () => {
     authorized,
     returnUrl,
     basicAuthHeader,
-    login,
-    logout,
+    setCredentials,
+    removeCredentials,
   };
 });
 
