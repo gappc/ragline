@@ -9,6 +9,7 @@ interface State {
   fileListLoading: boolean;
   uploadFileLoading: boolean;
   deleteFileLoading: boolean;
+  uploadAbortController: AbortController | null;
 }
 
 const initialState: State = {
@@ -16,6 +17,7 @@ const initialState: State = {
   fileListLoading: false,
   uploadFileLoading: false,
   deleteFileLoading: false,
+  uploadAbortController: null,
 };
 
 export const useFileStore = defineStore("filesStore", {
@@ -37,6 +39,15 @@ export const useFileStore = defineStore("filesStore", {
     async uploadFiles(files: File[]) {
       useMessageStore().setInfo("Uploading");
       this.uploadFileLoading = true;
+
+      // Handle aborting the previous request
+      if (
+        this.uploadAbortController != null &&
+        !this.uploadAbortController.signal.aborted
+      ) {
+        this.uploadAbortController.abort();
+      }
+      this.uploadAbortController = new AbortController();
 
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file, file.name));

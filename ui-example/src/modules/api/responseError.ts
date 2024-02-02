@@ -41,7 +41,7 @@ export class ResponseError extends Error {
 export const errorToMessage = (error: unknown): string => {
   if (error instanceof ResponseError) {
     if (error.message.length > 0) {
-      return error.message;
+      return `(${error.status}) ${error.message}`;
     }
     return `(${error.status}) ${error.statusText}`;
   }

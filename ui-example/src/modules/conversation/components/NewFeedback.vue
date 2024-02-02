@@ -41,7 +41,7 @@
         class="md:w-1/2"
         size="sm"
         variant="ghost"
-        :disabled="input.length === 0"
+        :disabled="input?.length === 0"
         @click="sendFeedbackInternal"
       >
         Send feedback

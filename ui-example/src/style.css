@@ -11,6 +11,9 @@
   button, input, textarea {
     @apply outline-none;
   }
+  button:focus-visible {
+    @apply outline outline-white;
+  }
 }
 
 :root {
