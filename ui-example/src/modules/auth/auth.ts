@@ -31,4 +31,7 @@ export const login = async (username: string, token: string) => {
 export const logout = () => {
   const { removeCredentials } = useAuthStore();
   removeCredentials();
+
+  // Reset messages
+  useMessageStore().reset();
 };
