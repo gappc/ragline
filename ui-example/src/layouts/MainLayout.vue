@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="flex justify-between items-center bg-black px-2">
+    <div class="flex justify-between items-center gap-3 bg-black px-2">
       <div></div>
       <ul class="flex bg-black gap-2 mt-2">
         <li

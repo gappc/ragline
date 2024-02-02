@@ -12,7 +12,7 @@
         class="flex justify-between items-center w-full border-0 my-[2px] px-3"
         @click="open"
       >
-        <div class="py-4">Wähle Deine Dateien aus</div>
+        <div class="py-4">Drop or click to upload your files ...</div>
         <div class="bg-white">
           <div class="p-1 bg-white" size="xs">
             <IconArrowUpwardAlt class="bg-transparent fill-app-bg" />
