@@ -9,14 +9,14 @@ export const sendSentiment = async (
   sentiment: Sentiment
 ) => {
   if (!paramsValid(conversationId, promptId)) {
-    return;
+    return false;
   }
 
   const item = currentItems.at(-1);
 
   if (item == null) {
     console.warn("item is undefined");
-    return;
+    return false;
   }
 
   await send(`/api/sentiment/${conversationId}/${promptId}`, { sentiment });
@@ -32,6 +32,8 @@ export const sendSentiment = async (
     currentItems.length - 1,
     item
   );
+
+  return true;
 };
 
 export const sendFeedback = async (
@@ -41,19 +43,19 @@ export const sendFeedback = async (
   feedback: string | null | undefined
 ) => {
   if (!paramsValid(conversationId, promptId)) {
-    return;
+    return false;
   }
 
   if (feedback == null || feedback.trim() === "") {
     console.warn("feedback is empty");
-    return;
+    return false;
   }
 
   const item = currentItems.at(-1);
 
   if (item == null) {
     console.warn("item is undefined");
-    return;
+    return false;
   }
 
   await send(`/api/feedback/${conversationId}/${promptId}`, { feedback });
@@ -71,6 +73,8 @@ export const sendFeedback = async (
     currentItems.length - 1,
     item
   );
+
+  return true;
 };
 
 const paramsValid = (
