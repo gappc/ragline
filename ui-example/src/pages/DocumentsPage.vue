@@ -11,7 +11,6 @@
         <FileUpload />
       </div>
     </div>
-    aa
   </MainLayout>
 </template>
 

@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="w-full md:w-[40rem]">
     <div
-      class="w-full md:w-[40rem] border-2 border-dotted"
+      class="border-2 border-dotted"
       :class="{ 'border-success-700': isOverDropZone }"
     >
       <ButtonCustom
