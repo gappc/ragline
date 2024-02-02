@@ -65,7 +65,12 @@ const filteredFiles = computed<FileEntry[]>(() => {
   if (searchFileName.value === "") {
     return files.value;
   }
-  return files.value.filter((file) => file.name.includes(searchFileName.value));
+
+  const upperCaseSearchFileName = searchFileName.value.toUpperCase();
+
+  return files.value.filter((file) =>
+    file.name.toLocaleUpperCase().includes(upperCaseSearchFileName)
+  );
 });
 
 const deleteFile = async (fileName: string) => {
