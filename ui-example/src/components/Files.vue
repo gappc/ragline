@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useFileStore } from "../modules/files/filesStore";
+import { onBeforeMount } from "vue";
 
 const { files } = storeToRefs(useFileStore());
 
@@ -28,4 +29,6 @@ const deleteFile = async (fileName: string) => {
   await useFileStore().deleteFile(fileName);
   await useFileStore().fetchFiles();
 };
+
+onBeforeMount(() => useFileStore().fetchFiles());
 </script>

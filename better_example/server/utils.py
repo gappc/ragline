@@ -34,7 +34,7 @@ def stream_response(
         content,
         media_type="text/event-stream",
         headers={
-            "X-RAGLINE-QUERY-ID": query_id,
+            "X-RAGLINE-PROMPT-ID": query_id,
             "X-RAGLINE-RESPONSE-SOURCE": base64_sources,
         },
     )

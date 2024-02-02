@@ -1,58 +1,120 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { client } from "../api/client";
 import { errorToMessage } from "../api/responseError";
 import { useMessageStore } from "../messages/messageStore";
 
-interface State {
-  token: string | null;
-  username: string | null;
-  authorized: boolean;
-}
+const storageKey = "authorization";
 
-const initialState: State = {
-  token: null,
-  username: null,
-  authorized: false,
-};
+export const useAuthStore = defineStore("authStore", () => {
+  const username = ref<string | null>(null);
+  const token = ref<string | null>(null);
+  const authorized = ref<boolean>(false);
+  const returnUrl = ref<string | null>(null);
 
-export const useAuthStore = defineStore("authStore", {
-  state: () => initialState,
-  getters: {
-    basicAuthHeader(state): Record<string, string> {
-      return {
-        Authorization: "Basic " + btoa(`${state.username}:${state.token}`),
-      };
-    },
-  },
-  actions: {
-    buildBasicAuthHeader(username: string, token: string) {
-      return { Authorization: "Basic " + btoa(`${username}:${token}`) };
-    },
-    async login(username: string, token: string): Promise<boolean> {
-      try {
-        await client("/api/hello", {
-          headers: this.buildBasicAuthHeader(username, token),
-        });
+  // Check if the authorization is stored in the session storage
+  const storedAuthorization = sessionStorage.getItem(storageKey);
 
-        useMessageStore().reset();
-        this.token = token;
-        this.username = username;
-        this.authorized = true;
-      } catch (error) {
-        useMessageStore().setError(errorToMessage(error));
-        this.token = null;
-        this.username = null;
-        this.authorized = false;
-      }
+  // If it is, try to parse the stored authorization
+  if (storedAuthorization != null) {
+    try {
+      const auth = JSON.parse(storedAuthorization);
+      authorized.value = auth.authorized;
+      username.value = auth.username;
+      token.value = auth.token;
+    } catch (error) {
+      console.error("Failed to parse the stored authorization", error);
+    }
+  }
 
-      return this.authorized;
-    },
-    logout() {
-      this.token = null;
-      this.username = null;
-      this.authorized = false;
-    },
-  },
+  // Build the basic auth header
+  const buildBasicAuthHeader = (
+    username: string,
+    token: string
+  ): Record<string, string> => ({
+    Authorization: "Basic " + btoa(`${username}:${token}`),
+  });
+
+  // Computed property for the basic auth header with the current username and token
+  const basicAuthHeader = computed(() =>
+    buildBasicAuthHeader(username.value ?? "", token.value ?? "")
+  );
+
+  // Router instance for redirecting after login and logout
+  const router = useRouter();
+
+  // Login function. On success, it sets the authorization and redirects to the return URL
+  // or the conversations page. On failure, it sets an error message and resets the authorization.
+  const login = async (
+    loginUsername: string,
+    loginToken: string
+  ): Promise<boolean> => {
+    try {
+      await client("/api/hello", {
+        headers: buildBasicAuthHeader(loginUsername, loginToken),
+      });
+
+      useMessageStore().reset();
+
+      // Set the authorization
+      token.value = loginUsername;
+      username.value = loginToken;
+      authorized.value = true;
+
+      // Store the authorization in the session storage
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          username: username.value,
+          token: token.value,
+          authorized: authorized.value.toString(),
+        })
+      );
+
+      // Redirect to the return URL or the conversations page
+      router.push(returnUrl.value || { name: "home" });
+    } catch (error) {
+      useMessageStore().setError(errorToMessage(error));
+      token.value = null;
+      username.value = null;
+      authorized.value = false;
+    }
+
+    return authorized.value;
+  };
+
+  // Logout function. It resets the authorization and redirects to the login page.
+  const logout = () => {
+    token.value = null;
+    username.value = null;
+    authorized.value = false;
+
+    // Remove the authorization from the session storage
+    sessionStorage.removeItem(storageKey);
+
+    // Redirect to the login page
+    router.push({ name: "login" });
+  };
+
+  // Handle changes to the session storage that are not triggered by this app
+  // (e.g. changes made in developer tools)
+  window.addEventListener("storage", function () {
+    const storedAuthorization = sessionStorage.getItem(storageKey);
+    if (storedAuthorization == null) {
+      logout();
+    }
+  });
+
+  return {
+    username,
+    token,
+    authorized,
+    returnUrl,
+    basicAuthHeader,
+    login,
+    logout,
+  };
 });
 
 if (import.meta.hot) {

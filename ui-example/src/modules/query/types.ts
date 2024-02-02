@@ -7,3 +7,8 @@ export interface Query {
 export interface QueryBody {
   queries: Query[];
 }
+
+export interface DocumentSource {
+  file: string;
+  pages: number[];
+}

@@ -141,7 +141,7 @@ async def delete_file(
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
-@app.post("/sentiment/{query_id}")
+@app.post("/sentiment/{conversationId}/{query_id}")
 async def post_sentiment(
     username: Annotated[str, Depends(get_current_username)],
     query_id: str,
@@ -152,7 +152,7 @@ async def post_sentiment(
     return "OK"
 
 
-@app.post("/feedback/{query_id}")
+@app.post("/feedback/{conversationId}/{query_id}")
 async def post_feedback(
     username: Annotated[str, Depends(get_current_username)],
     query_id: str,

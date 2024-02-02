@@ -1,23 +1,23 @@
 import { ref } from "vue";
 import { client, parseEventStream } from "../api/client";
 import { errorToMessage } from "../api/responseError";
-import { QueryBody } from "./types";
+import { DocumentSource, QueryBody } from "./types";
 import { useMessageStore } from "../messages/messageStore";
 
-const abortController = ref<AbortController | null>(null);
+export interface SubmitPromptResult {
+  promptId: string | null;
+  answer: string | null;
+  error: string | null;
+  sources: DocumentSource[];
+}
 
 export const useQuery = () => {
-  const queryResponseMessage = ref("");
-  const queryResponseError = ref("");
-  const queryResponseLoading = ref(false);
-  const queryResponseSources = ref<Record<string, string[]>>({});
+  const abortController = ref<AbortController | null>(null);
+  const currentMessage = ref<string | null>(null);
+  const loading = ref(false);
 
-  const submitQuery = async (query: string) => {
-    queryResponseMessage.value = "";
-    queryResponseError.value = "";
-    queryResponseLoading.value = true;
-    queryResponseSources.value = {};
-
+  const submitPrompt = async (query: string) => {
+    // Handle aborting the previous request
     if (
       abortController.value != null &&
       !abortController.value.signal.aborted
@@ -26,11 +26,27 @@ export const useQuery = () => {
     }
     abortController.value = new AbortController();
 
+    // Reset the current message
+    currentMessage.value = null;
+
+    // Set the loading state
+    loading.value = true;
+
+    // Create the result object
+    const result: SubmitPromptResult = {
+      promptId: null,
+      answer: null,
+      error: null,
+      sources: [],
+    };
+
+    // Create the request body
     const body: QueryBody = {
       queries: [{ query }],
     };
 
     try {
+      // Make the request
       const response = await client("/api/query", {
         method: "POST",
         headers: {
@@ -40,33 +56,49 @@ export const useQuery = () => {
         signal: abortController.value.signal,
       });
 
+      // Try to extract the prompt ID from the headers
+      result.promptId = response.headers.get("X-RAGLINE-PROMPT-ID");
+
       // Try to extract the response source from the headers
-      const responseSourceBase64 = response.headers.get(
-        "X-RAGLINE-RESPONSE-SOURCE"
-      );
-      if (responseSourceBase64 != null) {
-        const responseSource = atob(responseSourceBase64);
-        queryResponseSources.value = JSON.parse(responseSource);
-      }
+      const sourcesBase64 = response.headers.get("X-RAGLINE-RESPONSE-SOURCE");
+      result.sources = computeSources(sourcesBase64);
 
       // Parse the event stream
+      result.answer = "";
+      currentMessage.value = "";
       for await (const chunk of parseEventStream(response)) {
-        queryResponseMessage.value += chunk;
+        result.answer += chunk;
+        currentMessage.value += chunk;
       }
-
-      return response.headers.get("X-RAGLINE-QUERY-ID");
     } catch (error) {
-      useMessageStore().setError(errorToMessage(error));
-    } finally {
-      queryResponseLoading.value = false;
+      const errorMessage = errorToMessage(error);
+      result.error = errorMessage;
+      useMessageStore().setError(errorMessage);
     }
+
+    loading.value = false;
+
+    return result;
   };
 
   return {
-    queryResponseMessage,
-    queryResponseError,
-    queryResponseLoading,
-    queryResponseSources,
-    submitQuery,
+    abortController,
+    currentMessage,
+    loading,
+    submitPrompt,
   };
+};
+
+const computeSources = (sourcesBase64: string | null): DocumentSource[] => {
+  if (sourcesBase64 == null) {
+    return [];
+  }
+
+  const sourcesString = atob(sourcesBase64);
+  const sourcesObject: Record<string, string[]> = JSON.parse(sourcesString);
+
+  return Object.entries(sourcesObject).map(([key, value]) => ({
+    file: key,
+    pages: value.map<number>((v) => parseInt(v, 10)).sort(),
+  }));
 };
