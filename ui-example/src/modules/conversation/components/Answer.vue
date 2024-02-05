@@ -26,7 +26,7 @@
 
       <!-- Show feedback -->
       <Feedback
-        v-if="isLast || item.feedback != null"
+        v-if="item.promptId != null && (isLast || item.feedback != null)"
         class="mt-2"
         :prompt-id="item.promptId"
         :sentiment="item.feedback?.sentiment ?? null"
@@ -34,6 +34,11 @@
         :editable="isLast"
         :loading="loading"
       />
+
+      <!-- Show error -->
+      <div v-if="item.error != null" class="text-error">
+        {{ item.error }}
+      </div>
     </div>
   </div>
 </template>
