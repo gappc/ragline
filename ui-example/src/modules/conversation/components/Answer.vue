@@ -19,7 +19,9 @@
       <div v-if="item.sources.length > 0" class="flex flex-col divide-y mt-3">
         <div class="font-bold py-3">Documents that were searched</div>
         <div v-for="source in item.sources" class="flex justify-between py-3">
-          <a :href="`/api/files/${source.file}`">{{ source.file }}</a>
+          <a :href="`/api/files/${source.file}`" target="_blank">{{
+            source.file
+          }}</a>
           <span>Pages ({{ source.pages.join(",") }})</span>
         </div>
       </div>
