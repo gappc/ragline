@@ -16,7 +16,7 @@ export const useQuery = () => {
   const currentMessage = ref<string | null>(null);
   const loading = ref(false);
 
-  const submitPrompt = async (query: string) => {
+  const submitPrompt = async (conversationId: string, query: string) => {
     // Handle aborting the previous request
     if (
       abortController.value != null &&
@@ -47,7 +47,7 @@ export const useQuery = () => {
 
     try {
       // Make the request
-      const response = await client("/api/query", {
+      const response = await client(`/api/query/${conversationId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

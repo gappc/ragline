@@ -6,9 +6,19 @@ from typing import Any, Dict, List
 
 from fastapi.responses import StreamingResponse
 from llama_index.schema import NodeWithScore
-from logger.custom_logger import query_logger_for_qid
+from logger.custom_logger import logger_bind
 from starlette.responses import ContentStream
 from utils.llm import get_token_counts_as_text
+import copy
+
+
+def remove_embeddings(source_nodes: List[NodeWithScore]) -> List[NodeWithScore]:
+    response_source: List[NodeWithScore] = []
+    for node in source_nodes:
+        tmp = copy.deepcopy(node)
+        tmp.node.embedding = None
+        response_source.append(tmp)
+    return response_source
 
 
 def extract_response_source(source_nodes: List[NodeWithScore]):
@@ -40,7 +50,8 @@ def stream_response(
     )
 
 
-def log_response(query_id, stream):
+def log_response(conversation_id, query_id, stream):
     stream_text = "".join(stream)
-    query_logger_for_qid(query_id).info("Response: {}", stream_text)
-    query_logger_for_qid(query_id).info(get_token_counts_as_text())
+    logger = logger_bind(conversation_id, query_id)
+    logger.info("Response: {}", stream_text)
+    logger.info(get_token_counts_as_text())

@@ -4,6 +4,7 @@
 __pycache__
 
 /log/query.log
+/log/conversation.log
 
 .env
 docker-compose.override.yml

@@ -80,7 +80,10 @@ const submit = async (prompt: string) => {
     return;
   }
 
-  const { promptId, answer, error, sources } = await submitPrompt(prompt);
+  const { promptId, answer, error, sources } = await submitPrompt(
+    currentConversationId.value,
+    prompt
+  );
 
   updateItem(currentConversationId.value, index - 1, {
     promptId,
