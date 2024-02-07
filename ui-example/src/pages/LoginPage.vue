@@ -20,7 +20,7 @@
       >
         <template #prepend><IconLock /></template>
         <template #append>
-          <button @click="showPassword = !showPassword">
+          <button @click="showPassword = !showPassword" type="button">
             <IconVisibilityOff />
           </button>
         </template>
