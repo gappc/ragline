@@ -2,7 +2,7 @@ import secrets
 from typing import Annotated, List
 from server.hasher import Hasher
 
-from db import crud
+from db import crud_user
 from db.database import get_db
 from db.models import User
 from fastapi import Depends, HTTPException, status
@@ -22,7 +22,7 @@ def get_current_user(
     try:
         # This shortcut is problematic in terms of timing attacks
         # user = fake_users_db.get(credentials.username)
-        user = crud.get_user_by_username(db, username=credentials.username)
+        user = crud_user.get_user_by_username(db, username=credentials.username)
         if user is None:
             raise Exception("User not found")
 

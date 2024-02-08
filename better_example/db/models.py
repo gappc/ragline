@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+import datetime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -13,15 +14,18 @@ class User(Base):
     roles = Column(String)
     is_active = Column(Boolean, default=True)
 
-    # items = relationship("Conversation", back_populates="owner")
+    conversations = relationship("Conversation", back_populates="owner")
 
 
-# class Conversation(Base):
-#     __tablename__ = "conversations"
+class Conversation(Base):
+    __tablename__ = "conversations"
 
-#     id = Column(Integer, primary_key=True)
-#     title = Column(String, index=True)
-#     description = Column(Text)
-#     owner_id = Column(Integer, ForeignKey("users.id"))
+    id = Column(Integer, primary_key=True)
+    conversation_id = Column(String, index=True)
+    query_id = Column(String)
+    content = Column(String)
+    type = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
-#     owner = relationship("User", back_populates="items")
+    owner = relationship("User", back_populates="conversations")

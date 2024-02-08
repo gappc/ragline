@@ -1,4 +1,4 @@
-from db import crud, schemas
+from db import crud_user, schemas
 from db.database import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from logger.custom_logger import logger
@@ -18,10 +18,10 @@ allow_delete_user = RoleChecker(["admin"])
     dependencies=[Depends(allow_create_user)],
 )
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_username(db, username=user.username)
+    db_user = crud_user.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    new_user = crud.create_user(db=db, user=user)
+    new_user = crud_user.create_user(db=db, user=user)
     logger.info("User created: {}", new_user)
     create_user_paths(new_user.username)
     return new_user
@@ -30,13 +30,13 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @router.get("/users", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     logger.info("Reading users")
-    users = crud.get_users(db, skip=skip, limit=limit)
+    users = crud_user.get_users(db, skip=skip, limit=limit)
     return users
 
 
 @router.get("/users/{user_id}", response_model=schemas.User)
 def read_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
+    db_user = crud_user.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
@@ -47,7 +47,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     dependencies=[Depends(allow_delete_user)],
 )
 def delete_user(user_id: int, db: Session = Depends(get_db)):
-    username = crud.delete_user(db, user_id)
+    username = crud_user.delete_user(db, user_id)
     if username is None:
         logger.error(f"User with ID {user_id} not found")
         return "OK"

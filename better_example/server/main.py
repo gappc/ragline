@@ -4,19 +4,21 @@ from typing import Annotated
 
 import uvicorn
 from db import models
-from db.database import engine
+from db.crud_conversation import add_conversation, create_conversation
+from db.database import engine, get_db
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException
 from logger.custom_logger import InterceptHandler, logger_bind
 from server.auth import get_current_user
 from server.id import generate_id
 from server.middlewares import RequestIdInjectionMiddleware
-from server.routers import files, users
+from server.routers import conversations, files, users
 from server.utils import (
     extract_response_source,
     log_response,
     remove_embeddings,
     stream_response,
 )
+from sqlalchemy.orm import Session
 from utils.query import query_by_term
 
 # Configure logging
@@ -29,6 +31,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.add_middleware(RequestIdInjectionMiddleware)
 app.include_router(users.router)
+app.include_router(conversations.router)
 app.include_router(files.router)
 
 
@@ -39,28 +42,13 @@ async def hello(
     return "Hello " + user.username
 
 
-@app.post("/conversation")
-async def post_conversation(
-    user: Annotated[models.User, Depends(get_current_user)],
-):
-    # Generate new conversation ID
-    conversation_id = generate_id()
-
-    # Create a new conversation logger
-    logger = logger_bind(conversation_id, None)
-    logger.info("Username: {} started new conversation with ID {}", user.username)
-
-    # TODO: create folder for conversation
-
-    return conversation_id
-
-
 @app.post("/query/{conversation_id}")
 async def post_query(
     user: Annotated[models.User, Depends(get_current_user)],
     background_tasks: BackgroundTasks,
     conversation_id: str,
     request: QueryRequest = Body(...),
+    db: Session = Depends(get_db),
 ):
     # Generate new query ID
     query_id = generate_id()
@@ -71,6 +59,10 @@ async def post_query(
         username = user.username
         logger.info("Username: {}", username)
         logger.info("Request: {}", request)
+
+        query = request.queries[0].query
+
+        add_conversation(db, user.id, conversation_id, query_id, query, "QUERY_REQUEST")
 
         # Do the query
         response = query_by_term(username, request.queries[0].query)
@@ -84,7 +76,7 @@ async def post_query(
         logger.info("Metadata: {}", response.metadata)
 
         # Create one stream for the response and one for logging
-        [response_stream, response_stream_log] = (
+        [response_stream, response_stream_persist, response_stream_log] = (
             # If no documents were found, return the streams from string
             [
                 "No documents found that match your query. Maybe you need to upload some documents first?",
@@ -92,7 +84,19 @@ async def post_query(
             ]
             if response.source_nodes is None
             # Otherwise, duplicate the streaming response
-            else tee(response.response_gen, 2)
+            else tee(response.response_gen, 3)
+        )
+
+        # Persist the response after the response was send
+        background_tasks.add_task(
+            add_conversation,
+            db,
+            user.id,
+            conversation_id,
+            query_id,
+            "".join(response_stream_persist),
+            "QUERY_RESPONSE",
+            False,
         )
 
         # Log the response after the response was send
@@ -115,9 +119,13 @@ async def post_sentiment(
     conversation_id: str,
     query_id: str,
     request: SentimentRequest = Body(...),
+    db: Session = Depends(get_db),
 ):
     logger = logger_bind(conversation_id, query_id)
     logger.info("Sentiment: {}", request.sentiment)
+    add_conversation(
+        db, user.id, conversation_id, query_id, request.sentiment, "Sentiment"
+    )
     return "OK"
 
 
@@ -127,9 +135,13 @@ async def post_feedback(
     conversation_id: str,
     query_id: str,
     request: FeedbackRequest = Body(...),
+    db: Session = Depends(get_db),
 ):
     logger = logger_bind(conversation_id, query_id)
     logger.info("Feedback: {}", request.feedback)
+    add_conversation(
+        db, user.id, conversation_id, query_id, request.feedback, "Feedback"
+    )
     return "OK"
 
 
