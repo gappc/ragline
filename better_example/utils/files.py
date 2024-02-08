@@ -5,18 +5,8 @@ from typing import BinaryIO
 
 from llama_index import SimpleDirectoryReader
 from logger.custom_logger import logger
-from server.auth import fake_users_db
 from utils.index import index_add_documents, index_delete_by_path
-from utils.paths import (
-    compute_docs_path,
-    compute_tmp_path,
-    compute_user_path,
-    create_user_paths,
-)
-
-# Initialize: create paths for users if they dont exist
-for username in fake_users_db:
-    create_user_paths(username)
+from utils.paths import compute_docs_path, compute_tmp_path, compute_user_path
 
 
 def do_get_files(username: str):

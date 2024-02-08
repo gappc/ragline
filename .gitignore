@@ -8,4 +8,4 @@ __pycache__
 
 .env
 docker-compose.override.yml
-userdb.json
+ragline.db

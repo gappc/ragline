@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,6 +25,11 @@ def compute_user_path(username):
 def create_user_paths(username):
     Path(TMP_PATH + "/" + username).mkdir(parents=True, exist_ok=True)
     Path(DOCS_PATH + "/" + username).mkdir(parents=True, exist_ok=True)
+
+
+def delete_user_paths(username):
+    shutil.rmtree(TMP_PATH + "/" + username, ignore_errors=True)
+    shutil.rmtree(DOCS_PATH + "/" + username, ignore_errors=True)
 
 
 def _compute_user_path(base, username):

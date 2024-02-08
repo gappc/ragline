@@ -3,14 +3,13 @@ from itertools import tee
 from typing import Annotated
 
 import uvicorn
+from utils.paths import create_user_paths, delete_user_paths
+from db import crud, models, schemas
+from db.database import get_db, engine
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from logger.custom_logger import (
-    InterceptHandler,
-    logger_bind,
-    logger,
-)
-from server.auth import get_current_username
+from logger.custom_logger import InterceptHandler, logger, logger_bind
+from server.auth import RoleChecker, get_current_user
 from server.id import generate_id
 from server.middlewares import RequestIdInjectionMiddleware
 from server.utils import (
@@ -19,6 +18,7 @@ from server.utils import (
     remove_embeddings,
     stream_response,
 )
+from sqlalchemy.orm import Session
 from utils.files import compute_docs_path, do_delete_file, do_get_files, do_upsert_file
 from utils.query import query_by_term
 
@@ -27,27 +27,78 @@ logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
 from .api import FeedbackRequest, QueryRequest, SentimentRequest
 
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 app.add_middleware(RequestIdInjectionMiddleware)
+
+allow_create_user = RoleChecker(["admin"])
+allow_delete_user = RoleChecker(["admin"])
 
 
 @app.get("/hello")
 async def hello(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
 ):
-    return "Hello " + username
+    return "Hello " + user.username
+
+
+@app.post(
+    "/users",
+    response_model=schemas.User,
+    dependencies=[Depends(allow_create_user)],
+)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_username(db, username=user.username)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    new_user = crud.create_user(db=db, user=user)
+    logger.info("User created: {}", new_user)
+    create_user_paths(new_user.username)
+    return new_user
+
+
+@app.get("/users", response_model=list[schemas.User])
+def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    logger.info("Reading users")
+    users = crud.get_users(db, skip=skip, limit=limit)
+    return users
+
+
+@app.get("/users/{user_id}", response_model=schemas.User)
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = crud.get_user(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+
+@app.delete(
+    "/users/{user_id}",
+    dependencies=[Depends(allow_delete_user)],
+)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    username = crud.delete_user(db, user_id)
+    if username is None:
+        logger.error(f"User with ID {user_id} not found")
+        return "OK"
+
+    logger.info(f"User with ID {user_id} deleted: {username}")
+    delete_user_paths(username)
+    logger.info(f"User folders for user with ID {user_id} and name {username} deleted")
+    return "OK"
 
 
 @app.post("/conversation")
 async def post_conversation(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
 ):
     # Generate new conversation ID
     conversation_id = generate_id()
 
     # Create a new conversation logger
-    logger = logger_bind(conversation_id)
-    logger.info("Username: {} started new conversation with ID {}", username)
+    logger = logger_bind(conversation_id, None)
+    logger.info("Username: {} started new conversation with ID {}", user.username)
 
     # TODO: create folder for conversation
 
@@ -56,7 +107,7 @@ async def post_conversation(
 
 @app.post("/query/{conversation_id}")
 async def post_query(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
     background_tasks: BackgroundTasks,
     conversation_id: str,
     request: QueryRequest = Body(...),
@@ -67,6 +118,7 @@ async def post_query(
     # Use the conversation logger
     logger = logger_bind(conversation_id, query_id)
     try:
+        username = user.username
         logger.info("Username: {}", username)
         logger.info("Request: {}", request)
 
@@ -109,10 +161,11 @@ async def post_query(
 
 @app.post("/files")
 async def upsert_files(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
     files: list[UploadFile],
 ):
     try:
+        username = user.username
         for file in files:
             do_upsert_file(username, file.filename, file.file)
         return "OK"
@@ -127,9 +180,10 @@ async def upsert_files(
 
 @app.get("/files")
 async def get_files(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
 ):
     try:
+        username = user.username
         return do_get_files(username)
     except Exception as e:
         logger.error("---------Error get_files---------")
@@ -140,9 +194,10 @@ async def get_files(
 
 @app.get("/files/{filename}")
 async def get_file(
-    username: Annotated[str, Depends(get_current_username)], filename: str
+    user: Annotated[models.User, Depends(get_current_user)], filename: str
 ):
     try:
+        username = user.username
         path = compute_docs_path(username, filename)
         return FileResponse(path=path, filename=filename)
     except Exception as e:
@@ -154,9 +209,10 @@ async def get_file(
 
 @app.delete("/files/{filename}")
 async def delete_file(
-    username: Annotated[str, Depends(get_current_username)], filename: str
+    user: Annotated[models.User, Depends(get_current_user)], filename: str
 ):
     try:
+        username = user.username
         do_delete_file(username, filename)
         return "OK"
     except Exception as e:
@@ -168,7 +224,7 @@ async def delete_file(
 
 @app.post("/sentiment/{conversation_id}/{query_id}")
 async def post_sentiment(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
     conversation_id: str,
     query_id: str,
     request: SentimentRequest = Body(...),
@@ -180,7 +236,7 @@ async def post_sentiment(
 
 @app.post("/feedback/{conversation_id}/{query_id}")
 async def post_feedback(
-    username: Annotated[str, Depends(get_current_username)],
+    user: Annotated[models.User, Depends(get_current_user)],
     conversation_id: str,
     query_id: str,
     request: FeedbackRequest = Body(...),

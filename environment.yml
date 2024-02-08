@@ -86,6 +86,7 @@ dependencies:
       - openai==1.8.0
       - packaging==23.2
       - pandas==2.1.4
+      - passlib==1.7.4
       - pydantic==2.5.3
       - pydantic-core==2.14.6
       - pypdf==3.17.4

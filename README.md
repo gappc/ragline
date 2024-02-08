@@ -2,7 +2,11 @@
 
 ## Start
 
-First you need to provide a `userdb.json` file in the root directory. This file contains the user credentials for the web interface. You can use the `userdb.json.example` file as a template.
+Although not strictly necessary, it is recommended to create a file for the SQLite database:
+
+```bash
+touch ragline.db
+```
 
 Then start the project using docker compose (recommended):
 
@@ -55,8 +59,8 @@ conda env export --no-builds | grep -v "prefix" > environment.yml
 
 ```bash
 # Build docker image for server
-docker build . -t ragline/server:0.0.1
+docker compose build server
 
 # Build docker image for ui
-docker build . -t ragline/ui:0.0.1
+docker compose build ui
 ```

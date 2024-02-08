@@ -16,5 +16,5 @@ class RequestIdInjectionMiddleware:
                 return await self.app(scope, receive, send)
 
             except Exception as ex:
-                logger.error(f"Request failed: {ex}")
+                logger.exception(f"Request failed: {ex}", ex)
                 return JSONResponse(content={"success": False}, status_code=500)
