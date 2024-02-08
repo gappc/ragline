@@ -1,5 +1,5 @@
 from logger.custom_logger import logger
-from server.auth import Hasher
+from server.hasher import Hasher
 from sqlalchemy.orm import Session
 
 from . import models, schemas

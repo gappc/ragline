@@ -1,5 +1,6 @@
 import secrets
 from typing import Annotated, List
+from server.hasher import Hasher
 
 from db import crud
 from db.database import get_db
@@ -7,21 +8,7 @@ from db.models import User
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from logger.custom_logger import logger
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-class Hasher:
-    @staticmethod
-    def verify_password(plain_password, hashed_password):
-        return pwd_context.verify(plain_password, hashed_password)
-
-    @staticmethod
-    def get_password_hash(password):
-        return pwd_context.hash(password)
 
 
 security = HTTPBasic()
