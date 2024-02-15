@@ -1,6 +1,11 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { ChatEvent, ChatSession } from "./types";
-import { fetchChatEvents, fetchChatSessions } from "./utils";
+import {
+  fetchChatEvents,
+  fetchChatSessions,
+  fetchDeleteChatSession,
+  fetchNewChatSession,
+} from "./utils";
 
 interface State {
   currentChatSessionId: string | null;
@@ -8,63 +13,8 @@ interface State {
 }
 
 const initialState: State = {
-  currentChatSessionId: "34c77cc87e634be28a9f482d4a68d5bd",
-  chatSessions: [
-    {
-      chatSessionId: "34c77cc87e634be28a9f482d4a68d5bd",
-      name: "Chat 1",
-      events: [
-        {
-          promptId: "1",
-          prompt: "What is the meaning of life?",
-          answer: "42",
-          error: null,
-          sources: [],
-          feedback: null,
-        },
-        {
-          promptId: "2",
-          prompt: "How many roads?",
-          answer: "12",
-          error: null,
-          sources: [
-            {
-              file: "file1",
-              pages: [1, 2, 3],
-            },
-            {
-              file: "file2",
-              pages: [4, 5, 6],
-            },
-          ],
-          feedback: {
-            sentiment: "bad",
-            items: [],
-          },
-        },
-        {
-          promptId: "3",
-          prompt: "Why is the sky blue?",
-          answer: "Because it is",
-          error: null,
-          sources: [],
-          feedback: {
-            sentiment: "good",
-            items: [
-              {
-                text: "I like this answer",
-                date: new Date(),
-              },
-              {
-                text: "Yes, really nice",
-                date: new Date(),
-              },
-            ],
-          },
-        },
-      ],
-    },
-  ],
+  currentChatSessionId: null,
+  chatSessions: [],
 };
 
 export const useChatSessionStore = defineStore("chatSessionStore", {
@@ -88,16 +38,32 @@ export const useChatSessionStore = defineStore("chatSessionStore", {
         await this.setCurrentChatSession(this.chatSessions[0].chatSessionId);
       }
     },
-    async setCurrentChatSession(chatSessionId: string) {
+    async initChatSession() {
+      const chatSession = await fetchNewChatSession();
+      this.currentChatSessionId = chatSession.chatSessionId;
+      this.chatSessions = [chatSession, ...this.chatSessions];
+
+      return this.currentChatSessionId;
+    },
+    async setCurrentChatSession(chatSessionId: string | null) {
       this.currentChatSessionId = chatSessionId;
 
-      const chatEvents = await fetchChatEvents(chatSessionId);
+      if (chatSessionId != null) {
+        const chatEvents = await fetchChatEvents(chatSessionId);
 
-      this.currentChatSessionId = chatSessionId;
+        this.currentChatSessionId = chatSessionId;
 
-      if (this.currentChatSession != null) {
-        this.currentChatSession.events = chatEvents;
+        if (this.currentChatSession != null) {
+          this.currentChatSession.events = chatEvents;
+        }
       }
+    },
+    async deleteChatSession(chatSessionId: string) {
+      await fetchDeleteChatSession(chatSessionId);
+      this.chatSessions = this.chatSessions.filter(
+        (c) => c.chatSessionId !== chatSessionId
+      );
+      this.setCurrentChatSession(null);
     },
     addItem(chatSessionId: string, itemOrPrompt: ChatEvent | string) {
       const chatSession = this.chatSessions.find(

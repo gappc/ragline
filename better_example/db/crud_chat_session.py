@@ -22,11 +22,19 @@ def create_chat_session(db: Session, user_id: str) -> models.ChatSession:
     return db_chat_session
 
 
+def delete_chat_session(db: Session, user_id: str, chat_session_id: str):
+    chat_session = get_chat_session(db, user_id, chat_session_id)
+
+    if chat_session:
+        db.delete(chat_session)
+        db.commit()
+
+
 def get_chat_sessions(db: Session, user_id: int) -> List[models.ChatSession]:
     return (
         db.query(models.ChatSession)
         .filter(models.ChatSession.owner_id == user_id)
-        .order_by(models.ChatSession.created_at)
+        .order_by(models.ChatSession.created_at.desc())
         .all()
     )
 
@@ -50,7 +58,7 @@ def create_chat_event(
     content: str,
     type: str,
 ) -> models.ChatEvent:
-    throw_if_chat_session_not_found(db, user_id, chat_session_id)
+    validate_user_and_chat_session_id(db, user_id, chat_session_id)
 
     db_chat_evente = models.ChatEvent(
         chat_session_id=chat_session_id,
@@ -66,7 +74,7 @@ def create_chat_event(
 def get_chat_events(
     db: Session, user_id: int, chat_session_id: str
 ) -> List[schemas.ChatEventBase]:
-    throw_if_chat_session_not_found(db, user_id, chat_session_id)
+    validate_user_and_chat_session_id(db, user_id, chat_session_id)
 
     # The chat_events variable contains a stream of all events for the given chat_session_id
     chat_events = (
@@ -123,7 +131,7 @@ def get_chat_events(
     return result
 
 
-def throw_if_chat_session_not_found(db: Session, user_id: int, chat_session_id: str):
+def validate_user_and_chat_session_id(db: Session, user_id: int, chat_session_id: str):
     # get_chat_session will return None if chat session is not found
     # This includes a check if the chat session belongs to the user
     chat_session = get_chat_session(db, user_id, chat_session_id)

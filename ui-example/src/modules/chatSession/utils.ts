@@ -31,6 +31,23 @@ interface ChatEventDto {
   feedback?: ChatResponseFeedback | null;
 }
 
+export const fetchNewChatSession = async (): Promise<ChatSession> => {
+  const response = await client("/api/chat-sessions", { method: "POST" });
+  const dtos: ChatSessionDto = await response.json();
+  return {
+    chatSessionId: dtos.chat_session_id,
+    name: dtos.name,
+    events: [],
+    createdAt: new Date(dtos.created_at),
+  };
+};
+
+export const fetchDeleteChatSession = async (
+  chatSessionId: string
+): Promise<void> => {
+  await client(`/api/chat-sessions/${chatSessionId}`, { method: "DELETE" });
+};
+
 export const fetchChatSessions = async (): Promise<ChatSession[]> => {
   const response = await client("/api/chat-sessions");
   const dtos: ChatSessionDto[] = await response.json();

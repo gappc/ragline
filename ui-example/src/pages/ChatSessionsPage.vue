@@ -1,5 +1,6 @@
 <template>
   <MainLayout>
+    <ChatSessionList class="hidden md:flex md:flex-col md:w-60" />
     <div class="flex flex-col flex-1 justify-between divide-y overflow-y-auto">
       <div
         ref="scrollWindow"
@@ -30,6 +31,7 @@ import MainLayout from "../layouts/MainLayout.vue";
 import { useChatSessionStore } from "../modules/chatSession/chatSessionStore";
 import ChatSession from "../modules/chatSession/components/ChatSession.vue";
 import { useQuery } from "../modules/query/useQuery";
+import ChatSessionList from "../modules/chatSession/components/ChatSessionList.vue";
 
 const scrollWindow = ref<HTMLElement | null>(null);
 
@@ -39,8 +41,11 @@ const { currentChatSessionId, currentChatSession, currentItems } = storeToRefs(
   useChatSessionStore()
 );
 
+const { loadChatSessions, initChatSession, addItem, updateItem } =
+  useChatSessionStore();
+
 // Load chat sessions
-useChatSessionStore().loadChatSessions();
+loadChatSessions();
 
 watch(
   () => currentMessage.value,
@@ -72,24 +77,21 @@ watch(
 );
 
 const submit = async (prompt: string) => {
-  if (currentChatSessionId.value == null) {
-    return;
-  }
+  const chatSessionId = currentChatSessionId.value ?? (await initChatSession());
 
-  const { addItem, updateItem } = useChatSessionStore();
-
-  const index = addItem(currentChatSessionId.value, prompt);
+  const index = addItem(chatSessionId, prompt);
 
   if (index == null) {
+    console.error("Failed to add item");
     return;
   }
 
   const { promptId, answer, error, sources } = await submitPrompt(
-    currentChatSessionId.value,
+    chatSessionId,
     prompt
   );
 
-  updateItem(currentChatSessionId.value, index - 1, {
+  updateItem(chatSessionId, index - 1, {
     promptId,
     prompt,
     answer,

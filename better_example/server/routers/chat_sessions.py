@@ -1,7 +1,12 @@
 from typing import Annotated
 
 from db import models, schemas
-from db.crud_chat_session import create_chat_session, get_chat_events, get_chat_sessions
+from db.crud_chat_session import (
+    create_chat_session,
+    delete_chat_session,
+    get_chat_events,
+    get_chat_sessions,
+)
 from db.database import get_db
 from fastapi import APIRouter, Depends
 from logger.custom_logger import logger, logger_bind
@@ -16,7 +21,7 @@ allow_delete_user = RoleChecker(["admin"])
 
 # Init new chat session
 @router.post("/chat-sessions")
-async def post_chat_session(
+async def init_chat_session(
     user: Annotated[models.User, Depends(get_current_user)],
     db: Session = Depends(get_db),
 ):
@@ -30,6 +35,19 @@ async def post_chat_session(
     )
 
     return chat_session
+
+
+# Delete chat session
+@router.delete("/chat-sessions/{chat_session_id}", status_code=204)
+async def init_chat_session(
+    user: Annotated[models.User, Depends(get_current_user)],
+    chat_session_id: str,
+    db: Session = Depends(get_db),
+):
+    delete_chat_session(db, user.id, chat_session_id)
+
+    logger = logger_bind(chat_session_id, None)
+    logger.info(f"Deleted chat session with ID {chat_session_id}")
 
 
 # Read chat sessions
