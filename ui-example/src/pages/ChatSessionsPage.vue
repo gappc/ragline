@@ -39,6 +39,9 @@ const { currentChatSessionId, currentChatSession, currentItems } = storeToRefs(
   useChatSessionStore()
 );
 
+// Load chat sessions
+useChatSessionStore().loadChatSessions();
+
 watch(
   () => currentMessage.value,
   (answer) => {

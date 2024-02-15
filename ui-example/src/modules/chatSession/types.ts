@@ -7,7 +7,7 @@ export interface FeedbackItem {
   date: Date;
 }
 
-export interface ChatResponseFeedback {
+export interface ChatFeedback {
   sentiment: Sentiment;
   items: FeedbackItem[];
 }
@@ -18,11 +18,12 @@ export interface ChatEvent {
   answer: string | null;
   error: string | null;
   sources: DocumentSource[];
-  feedback: ChatResponseFeedback | null;
+  feedback: ChatFeedback | null;
 }
 
 export interface ChatSession {
   chatSessionId: string;
   name: string;
   events: ChatEvent[];
+  createdAt?: Date;
 }

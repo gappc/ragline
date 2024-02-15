@@ -35,12 +35,12 @@ class ChatEvent(Base):
     __tablename__ = "chat_events"
 
     id = Column(Integer, primary_key=True)
-    # chat_session_id = Column(String, index=True)
-    chat_session_id = Column(String, ForeignKey("chat_sessions.id"), index=True)
+    chat_session_id = Column(
+        String, ForeignKey("chat_sessions.chat_session_id"), index=True
+    )
     query_id = Column(String)
     content = Column(String)
     type = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    # owner_id = Column(Integer, ForeignKey("chat_sessions.id"))
 
     owner = relationship("ChatSession", back_populates="chat_events")

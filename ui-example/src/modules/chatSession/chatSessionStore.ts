@@ -1,5 +1,6 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { ChatSession, ChatEvent } from "./types";
+import { ChatEvent, ChatSession } from "./types";
+import { fetchChatEvents, fetchChatSessions } from "./utils";
 
 interface State {
   currentChatSessionId: string | null;
@@ -81,8 +82,22 @@ export const useChatSessionStore = defineStore("chatSessionStore", {
     },
   },
   actions: {
-    setCurrentChatSession(chatSessionId: string) {
+    async loadChatSessions() {
+      this.chatSessions = await fetchChatSessions();
+      if (this.chatSessions.length > 0) {
+        await this.setCurrentChatSession(this.chatSessions[0].chatSessionId);
+      }
+    },
+    async setCurrentChatSession(chatSessionId: string) {
       this.currentChatSessionId = chatSessionId;
+
+      const chatEvents = await fetchChatEvents(chatSessionId);
+
+      this.currentChatSessionId = chatSessionId;
+
+      if (this.currentChatSession != null) {
+        this.currentChatSession.events = chatEvents;
+      }
     },
     addItem(chatSessionId: string, itemOrPrompt: ChatEvent | string) {
       const chatSession = this.chatSessions.find(

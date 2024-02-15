@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from db import models
+from db import models, schemas
 from db.crud_chat_session import create_chat_session, get_chat_events, get_chat_sessions
 from db.database import get_db
 from fastapi import APIRouter, Depends
@@ -33,7 +33,7 @@ async def post_chat_session(
 
 
 # Read chat sessions
-@router.get("/chat-sessions")
+@router.get("/chat-sessions", response_model=list[schemas.ChatSession])
 async def read_chat_sessions(
     user: Annotated[models.User, Depends(get_current_user)],
     db: Session = Depends(get_db),
@@ -57,16 +57,3 @@ async def read_chat_events(
     logger.info(f"Found : {len(chat_events)} chat events")
 
     return chat_events
-
-
-# @router.post("/chat-sessions/{chat_session_id}/events")
-# async def post_chat_event(
-#     user: Annotated[models.User, Depends(get_current_user)],
-#     chat_session_id: str,
-#     db: Session = Depends(get_db),
-# ):
-#     chat_sessions = get_chat_session(db, user.id, chat_session_id)
-
-#     logger.info(f"Found : {len(chat_sessions)} chat sessions")
-
-#     return chat_sessions

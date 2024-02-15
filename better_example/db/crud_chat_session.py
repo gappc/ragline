@@ -1,10 +1,11 @@
-from typing import List
+from collections import defaultdict
+from typing import DefaultDict, List
+
+from db import schemas
 from server.id import generate_id
-from logger.custom_logger import logger
-from server.hasher import Hasher
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+from . import models
 
 
 def create_chat_session(db: Session, user_id: str) -> models.ChatSession:
@@ -64,15 +65,62 @@ def create_chat_event(
 
 def get_chat_events(
     db: Session, user_id: int, chat_session_id: str
-) -> List[models.ChatEvent]:
+) -> List[schemas.ChatEventBase]:
     throw_if_chat_session_not_found(db, user_id, chat_session_id)
 
-    return (
+    # The chat_events variable contains a stream of all events for the given chat_session_id
+    chat_events = (
         db.query(models.ChatEvent)
-        .filter(models.ChatEvent.owner_id == chat_session_id)
+        .filter(models.ChatEvent.chat_session_id == chat_session_id)
         .order_by(models.ChatEvent.created_at)
         .all()
     )
+
+    # Reduce the (low level) list of all chat_events to a list of nicer shaped ChatEventBase instances grouped by query_id
+
+    # Order chat events by query_id
+    chat_events_by_query_id: DefaultDict[str, List[models.ChatEvent]] = defaultdict(
+        list[models.ChatEvent]
+    )
+    for chat_event in chat_events:
+        chat_events_by_query_id[chat_event.query_id].append(chat_event)
+
+    # Create a list of ChatEventBase instances
+    result: List[schemas.ChatEventBase] = []
+
+    for query_id, chat_events in chat_events_by_query_id.items():
+        # Create a ChatEventBase instance
+        result_item = schemas.ChatEventBase(query_id=query_id)
+
+        # Populate the query and answer fields
+        query_request = next(
+            (x for x in chat_events if x.type == "QUERY_REQUEST"), None
+        )
+        result_item.query = query_request.content if query_request else None
+
+        answer = next((x for x in chat_events if x.type == "QUERY_RESPONSE"), None)
+        result_item.answer = answer.content if answer else None
+
+        # Populate the feedback field
+        result_item.feedback = schemas.ChatFeedbackBase(sentiment="none", items=[])
+
+        feedbacks = filter(lambda x: x.type == "Feedback", chat_events)
+        if feedbacks:
+            for feedback in feedbacks:
+                result_item.feedback.items.append(
+                    schemas.FeedbackItem(
+                        text=feedback.content, date=feedback.created_at
+                    )
+                )
+
+        sentiments = list(filter(lambda x: x.type == "Sentiment", chat_events))
+        result_item.feedback.sentiment = (
+            sentiments[-1].content if sentiments else "none"
+        )
+
+        result.append(result_item)
+
+    return result
 
 
 def throw_if_chat_session_not_found(db: Session, user_id: int, chat_session_id: str):

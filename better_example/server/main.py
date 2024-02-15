@@ -97,7 +97,6 @@ async def post_query(
             query_id,
             "".join(response_stream_persist),
             "QUERY_RESPONSE",
-            False,
         )
 
         # Log the response after the response was send
