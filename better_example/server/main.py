@@ -4,14 +4,14 @@ from typing import Annotated
 
 import uvicorn
 from db import models
-from db.crud_conversation import add_conversation, create_conversation
+from db.crud_chat_session import create_chat_event
 from db.database import engine, get_db
 from fastapi import BackgroundTasks, Body, Depends, FastAPI, HTTPException
 from logger.custom_logger import InterceptHandler, logger_bind
 from server.auth import get_current_user
 from server.id import generate_id
 from server.middlewares import RequestIdInjectionMiddleware
-from server.routers import conversations, files, users
+from server.routers import chat_sessions, files, users
 from server.utils import (
     extract_response_source,
     log_response,
@@ -31,7 +31,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.add_middleware(RequestIdInjectionMiddleware)
 app.include_router(users.router)
-app.include_router(conversations.router)
+app.include_router(chat_sessions.router)
 app.include_router(files.router)
 
 
@@ -42,19 +42,18 @@ async def hello(
     return "Hello " + user.username
 
 
-@app.post("/query/{conversation_id}")
+@app.post("/query/{chat_session_id}")
 async def post_query(
     user: Annotated[models.User, Depends(get_current_user)],
     background_tasks: BackgroundTasks,
-    conversation_id: str,
+    chat_session_id: str,
     request: QueryRequest = Body(...),
     db: Session = Depends(get_db),
 ):
     # Generate new query ID
     query_id = generate_id()
 
-    # Use the conversation logger
-    logger = logger_bind(conversation_id, query_id)
+    logger = logger_bind(chat_session_id, query_id)
     try:
         username = user.username
         logger.info("Username: {}", username)
@@ -62,7 +61,9 @@ async def post_query(
 
         query = request.queries[0].query
 
-        add_conversation(db, user.id, conversation_id, query_id, query, "QUERY_REQUEST")
+        create_chat_event(
+            db, user.id, chat_session_id, query_id, query, "QUERY_REQUEST"
+        )
 
         # Do the query
         response = query_by_term(username, request.queries[0].query)
@@ -89,10 +90,10 @@ async def post_query(
 
         # Persist the response after the response was send
         background_tasks.add_task(
-            add_conversation,
+            create_chat_event,
             db,
             user.id,
-            conversation_id,
+            chat_session_id,
             query_id,
             "".join(response_stream_persist),
             "QUERY_RESPONSE",
@@ -101,7 +102,7 @@ async def post_query(
 
         # Log the response after the response was send
         background_tasks.add_task(
-            log_response, conversation_id, query_id, response_stream_log
+            log_response, chat_session_id, query_id, response_stream_log
         )
 
         # Return response stream
@@ -113,34 +114,34 @@ async def post_query(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
-@app.post("/sentiment/{conversation_id}/{query_id}")
+@app.post("/sentiment/{chat_session_id}/{query_id}")
 async def post_sentiment(
     user: Annotated[models.User, Depends(get_current_user)],
-    conversation_id: str,
+    chat_session_id: str,
     query_id: str,
     request: SentimentRequest = Body(...),
     db: Session = Depends(get_db),
 ):
-    logger = logger_bind(conversation_id, query_id)
+    logger = logger_bind(chat_session_id, query_id)
     logger.info("Sentiment: {}", request.sentiment)
-    add_conversation(
-        db, user.id, conversation_id, query_id, request.sentiment, "Sentiment"
+    create_chat_event(
+        db, user.id, chat_session_id, query_id, request.sentiment, "Sentiment"
     )
     return "OK"
 
 
-@app.post("/feedback/{conversation_id}/{query_id}")
+@app.post("/feedback/{chat_session_id}/{query_id}")
 async def post_feedback(
     user: Annotated[models.User, Depends(get_current_user)],
-    conversation_id: str,
+    chat_session_id: str,
     query_id: str,
     request: FeedbackRequest = Body(...),
     db: Session = Depends(get_db),
 ):
-    logger = logger_bind(conversation_id, query_id)
+    logger = logger_bind(chat_session_id, query_id)
     logger.info("Feedback: {}", request.feedback)
-    add_conversation(
-        db, user.id, conversation_id, query_id, request.feedback, "Feedback"
+    create_chat_event(
+        db, user.id, chat_session_id, query_id, request.feedback, "Feedback"
     )
     return "OK"
 

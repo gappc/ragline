@@ -16,7 +16,7 @@ export const useQuery = () => {
   const currentMessage = ref<string | null>(null);
   const loading = ref(false);
 
-  const submitPrompt = async (conversationId: string, query: string) => {
+  const submitPrompt = async (chatSessionId: string, query: string) => {
     // Handle aborting the previous request
     if (
       abortController.value != null &&
@@ -47,7 +47,7 @@ export const useQuery = () => {
 
     try {
       // Make the request
-      const response = await client(`/api/query/${conversationId}`, {
+      const response = await client(`/api/query/${chatSessionId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

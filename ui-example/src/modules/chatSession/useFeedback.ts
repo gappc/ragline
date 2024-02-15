@@ -1,14 +1,14 @@
 import { client } from "../api/client";
-import { useConversationStore } from "./conversationStore";
-import { ConversationItem, Sentiment } from "./types";
+import { useChatSessionStore } from "./chatSessionStore";
+import { ChatEvent, Sentiment } from "./types";
 
 export const sendSentiment = async (
-  conversationId: string | null,
+  chatSessionId: string | null,
   promptId: string | null,
-  currentItems: ConversationItem[],
+  currentItems: ChatEvent[],
   sentiment: Sentiment
 ) => {
-  if (!paramsValid(conversationId, promptId)) {
+  if (!paramsValid(chatSessionId, promptId)) {
     return false;
   }
 
@@ -19,7 +19,7 @@ export const sendSentiment = async (
     return false;
   }
 
-  await send(`/api/sentiment/${conversationId}/${promptId}`, { sentiment });
+  await send(`/api/sentiment/${chatSessionId}/${promptId}`, { sentiment });
 
   if (item.feedback == null) {
     item.feedback = { sentiment, items: [] };
@@ -27,8 +27,8 @@ export const sendSentiment = async (
     item.feedback.sentiment = sentiment;
   }
 
-  useConversationStore().updateItem(
-    conversationId!,
+  useChatSessionStore().updateItem(
+    chatSessionId!,
     currentItems.length - 1,
     item
   );
@@ -37,12 +37,12 @@ export const sendSentiment = async (
 };
 
 export const sendFeedback = async (
-  conversationId: string | null,
+  chatSessionId: string | null,
   promptId: string | null,
-  currentItems: ConversationItem[],
+  currentItems: ChatEvent[],
   feedback: string | null | undefined
 ) => {
-  if (!paramsValid(conversationId, promptId)) {
+  if (!paramsValid(chatSessionId, promptId)) {
     return false;
   }
 
@@ -58,7 +58,7 @@ export const sendFeedback = async (
     return false;
   }
 
-  await send(`/api/feedback/${conversationId}/${promptId}`, { feedback });
+  await send(`/api/feedback/${chatSessionId}/${promptId}`, { feedback });
 
   const feedbackItem = { text: feedback, date: new Date() };
 
@@ -68,8 +68,8 @@ export const sendFeedback = async (
     item.feedback.items = [...item.feedback.items, feedbackItem];
   }
 
-  useConversationStore().updateItem(
-    conversationId!,
+  useChatSessionStore().updateItem(
+    chatSessionId!,
     currentItems.length - 1,
     item
   );
@@ -77,12 +77,9 @@ export const sendFeedback = async (
   return true;
 };
 
-const paramsValid = (
-  conversationId: string | null,
-  promptId: string | null
-) => {
-  if (conversationId == null) {
-    console.warn("conversationId is undefined");
+const paramsValid = (chatSessionId: string | null, promptId: string | null) => {
+  if (chatSessionId == null) {
+    console.warn("chatSessionId is undefined");
     return false;
   }
 

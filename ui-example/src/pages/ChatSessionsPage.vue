@@ -5,9 +5,9 @@
         ref="scrollWindow"
         class="flex flex-col items-center overflow-y-auto"
       >
-        <Conversation
-          v-if="currentConversation"
-          :conversation="currentConversation"
+        <ChatSession
+          v-if="currentChatSession"
+          :chat-session="currentChatSession"
           :loading="loading"
         />
       </div>
@@ -23,20 +23,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import MainLayout from "../layouts/MainLayout.vue";
-import Conversation from "../modules/conversation/components/Conversation.vue";
-import { useConversationStore } from "../modules/conversation/conversationStore";
-import { useQuery } from "../modules/query/useQuery";
-import InputPrompt from "../components/input/InputPrompt.vue";
 import { storeToRefs } from "pinia";
+import { ref, watch } from "vue";
+import InputPrompt from "../components/input/InputPrompt.vue";
+import MainLayout from "../layouts/MainLayout.vue";
+import { useChatSessionStore } from "../modules/chatSession/chatSessionStore";
+import ChatSession from "../modules/chatSession/components/ChatSession.vue";
+import { useQuery } from "../modules/query/useQuery";
 
 const scrollWindow = ref<HTMLElement | null>(null);
 
 const { loading, currentMessage, abortController, submitPrompt } = useQuery();
 
-const { currentConversationId, currentConversation, currentItems } =
-  storeToRefs(useConversationStore());
+const { currentChatSessionId, currentChatSession, currentItems } = storeToRefs(
+  useChatSessionStore()
+);
 
 watch(
   () => currentMessage.value,
@@ -68,24 +69,24 @@ watch(
 );
 
 const submit = async (prompt: string) => {
-  if (currentConversationId.value == null) {
+  if (currentChatSessionId.value == null) {
     return;
   }
 
-  const { addItem, updateItem } = useConversationStore();
+  const { addItem, updateItem } = useChatSessionStore();
 
-  const index = addItem(currentConversationId.value, prompt);
+  const index = addItem(currentChatSessionId.value, prompt);
 
   if (index == null) {
     return;
   }
 
   const { promptId, answer, error, sources } = await submitPrompt(
-    currentConversationId.value,
+    currentChatSessionId.value,
     prompt
   );
 
-  updateItem(currentConversationId.value, index - 1, {
+  updateItem(currentChatSessionId.value, index - 1, {
     promptId,
     prompt,
     answer,

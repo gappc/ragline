@@ -16,18 +16,3 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
-
-
-class ConversationBase(BaseModel):
-    username: str
-    roles: str
-
-
-class Conversation(BaseModel):
-    id: str
-    conversation_id: str
-    query_id: str
-    type: str
-
-    class Config:
-        from_attributes = True

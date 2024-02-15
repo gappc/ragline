@@ -1,18 +1,18 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { ConversationContext, ConversationItem } from "./types";
+import { ChatSession, ChatEvent } from "./types";
 
 interface State {
-  currentConversationId: string | null;
-  conversations: ConversationContext[];
+  currentChatSessionId: string | null;
+  chatSessions: ChatSession[];
 }
 
 const initialState: State = {
-  currentConversationId: "1",
-  conversations: [
+  currentChatSessionId: "34c77cc87e634be28a9f482d4a68d5bd",
+  chatSessions: [
     {
-      conversationId: "1",
-      conversationTitle: "Chat 1",
-      items: [
+      chatSessionId: "34c77cc87e634be28a9f482d4a68d5bd",
+      name: "Chat 1",
+      events: [
         {
           promptId: "1",
           prompt: "What is the meaning of life?",
@@ -66,32 +66,32 @@ const initialState: State = {
   ],
 };
 
-export const useConversationStore = defineStore("conversationStore", {
+export const useChatSessionStore = defineStore("chatSessionStore", {
   state: () => initialState,
   getters: {
-    currentConversation(state): ConversationContext | undefined {
-      return state.conversations.find(
-        (c) => c.conversationId === state.currentConversationId
+    currentChatSession(state): ChatSession | undefined {
+      return state.chatSessions.find(
+        (c) => c.chatSessionId === state.currentChatSessionId
       );
     },
-    currentItems(): ConversationItem[] {
-      return this.currentConversation != null
-        ? this.currentConversation.items
+    currentItems(): ChatEvent[] {
+      return this.currentChatSession != null
+        ? this.currentChatSession.events
         : [];
     },
   },
   actions: {
-    setCurrentConversation(conversationId: string) {
-      this.currentConversationId = conversationId;
+    setCurrentChatSession(chatSessionId: string) {
+      this.currentChatSessionId = chatSessionId;
     },
-    addItem(conversationId: string, itemOrPrompt: ConversationItem | string) {
-      const conversation = this.conversations.find(
-        (c) => c.conversationId === conversationId
+    addItem(chatSessionId: string, itemOrPrompt: ChatEvent | string) {
+      const chatSession = this.chatSessions.find(
+        (c) => c.chatSessionId === chatSessionId
       );
-      if (!conversation) {
+      if (!chatSession) {
         return;
       }
-      const item: ConversationItem =
+      const item: ChatEvent =
         typeof itemOrPrompt === "string"
           ? {
               promptId: null,
@@ -103,26 +103,24 @@ export const useConversationStore = defineStore("conversationStore", {
             }
           : itemOrPrompt;
 
-      return conversation.items.push(item);
+      return chatSession.events.push(item);
     },
-    updateItem(conversationId: string, index: number, item: ConversationItem) {
-      const conversation = this.conversations.find(
-        (c) => c.conversationId === conversationId
+    updateItem(chatSessionId: string, index: number, item: ChatEvent) {
+      const chatSession = this.chatSessions.find(
+        (c) => c.chatSessionId === chatSessionId
       );
       if (
-        conversation == null ||
+        chatSession == null ||
         index < 0 ||
-        index >= conversation.items.length
+        index >= chatSession.events.length
       ) {
         return;
       }
-      conversation.items[index] = item;
+      chatSession.events[index] = item;
     },
   },
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useConversationStore, import.meta.hot)
-  );
+  import.meta.hot.accept(acceptHMRUpdate(useChatSessionStore, import.meta.hot));
 }

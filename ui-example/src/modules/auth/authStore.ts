@@ -35,7 +35,7 @@ export const useAuthStore = defineStore("authStore", () => {
   const router = useRouter();
 
   // Login function. On success, it sets the authorization and redirects to the return URL
-  // or the conversations page. On failure, it sets an error message and resets the authorization.
+  // or the chat-sessions page. On failure, it sets an error message and resets the authorization.
   const setCredentials = (nextUsername: string, nextToken: string) => {
     username.value = nextUsername;
     token.value = nextToken;

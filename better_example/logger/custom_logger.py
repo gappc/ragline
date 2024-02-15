@@ -31,18 +31,18 @@ def patching(record):
     record["extra"]["serialized"] = serialize(record)
 
 
-# Conversations (prompts and responses) are logged to a separate file
+# Chat sessions and events (prompts, responses, feedback) are logged to a separate file
 logger = logger.patch(patching)
 logger.add(
-    "./log/conversation.log",
+    "./log/chat_sessions.log",
     format="{extra[serialized]}",
     level="DEBUG",
     filter=lambda record: "cid" in record["extra"] and "qid" in record["extra"],
 )
 
 
-def logger_bind(conversation_id: str | None, query_id: str | None):
-    return logger.bind(cid=conversation_id).bind(qid=query_id)
+def logger_bind(chat_session_id: str | None, query_id: str | None):
+    return logger.bind(cid=chat_session_id).bind(qid=query_id)
 
 
 class InterceptHandler(logging.Handler):

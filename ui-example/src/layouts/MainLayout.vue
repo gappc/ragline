@@ -5,9 +5,9 @@
       <ul class="flex bg-black gap-2 mt-2">
         <li
           class="flex items-center rounded-b-none py-2 px-4"
-          :class="[{ 'bg-black': name !== 'conversations' }]"
+          :class="[{ 'bg-black': name !== 'chat-sessions' }]"
         >
-          <router-link :to="{ name: 'conversations' }" class="bg-inherit">
+          <router-link :to="{ name: 'chat-sessions' }" class="bg-inherit">
             Your questions
           </router-link>
         </li>

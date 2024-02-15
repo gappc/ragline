@@ -5,7 +5,7 @@ import { useAuthStore } from "./authStore";
 import { buildBasicAuthHeader } from "./utils";
 
 // Login function. On success, it sets the authorization and redirects to the return URL
-// or the conversations page. On failure, it sets an error message and resets the authorization.
+// or the chat-sessions page. On failure, it sets an error message and resets the authorization.
 export const login = async (username: string, token: string) => {
   const { setCredentials, removeCredentials } = useAuthStore();
 

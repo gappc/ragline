@@ -50,8 +50,8 @@ def stream_response(
     )
 
 
-def log_response(conversation_id, query_id, stream):
+def log_response(chat_session_id, query_id, stream):
     stream_text = "".join(stream)
-    logger = logger_bind(conversation_id, query_id)
+    logger = logger_bind(chat_session_id, query_id)
     logger.info("Response: {}", stream_text)
     logger.info(get_token_counts_as_text())

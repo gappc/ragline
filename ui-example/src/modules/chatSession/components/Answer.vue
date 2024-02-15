@@ -6,19 +6,19 @@
 
       <!-- Show loading info-->
       <div
-        v-if="loading && (item.answer?.length ?? 0) === 0"
+        v-if="loading && (event.answer?.length ?? 0) === 0"
         class="text-gray-500 animate-pulse"
       >
         Loading...
       </div>
 
       <!-- Show answer -->
-      <div v-if="item.answer">{{ item.answer }}</div>
+      <div v-if="event.answer">{{ event.answer }}</div>
 
       <!-- Document sources -->
-      <div v-if="item.sources.length > 0" class="flex flex-col divide-y mt-3">
+      <div v-if="event.sources.length > 0" class="flex flex-col divide-y mt-3">
         <div class="font-bold py-3">Documents that were searched</div>
-        <div v-for="source in item.sources" class="flex justify-between py-3">
+        <div v-for="source in event.sources" class="flex justify-between py-3">
           <a :href="`/api/files/${source.file}`" target="_blank">{{
             source.file
           }}</a>
@@ -28,26 +28,26 @@
 
       <!-- Show feedback -->
       <Feedback
-        v-if="item.promptId != null && (isLast || item.feedback != null)"
+        v-if="event.promptId != null && (isLast || event.feedback != null)"
         class="mt-2"
-        :prompt-id="item.promptId"
-        :sentiment="item.feedback?.sentiment ?? null"
-        :items="item.feedback?.items ?? null"
+        :prompt-id="event.promptId"
+        :sentiment="event.feedback?.sentiment ?? null"
+        :items="event.feedback?.items ?? null"
         :editable="isLast"
         :loading="loading"
       />
 
       <!-- Show error -->
-      <div v-if="item.error != null" class="text-error">
-        {{ item.error }}
+      <div v-if="event.error != null" class="text-error">
+        {{ event.error }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ConversationItem } from "../types";
+import { ChatEvent } from "../types";
 import Feedback from "./Feedback.vue";
 
-defineProps<{ item: ConversationItem; isLast: boolean; loading: boolean }>();
+defineProps<{ event: ChatEvent; isLast: boolean; loading: boolean }>();
 </script>

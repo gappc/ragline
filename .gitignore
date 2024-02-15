@@ -3,8 +3,7 @@
 .docs_for_test
 __pycache__
 
-/log/query.log
-/log/conversation.log
+/log
 
 .env
 docker-compose.override.yml

@@ -7,22 +7,22 @@ export interface FeedbackItem {
   date: Date;
 }
 
-export interface ConversationItemFeedback {
+export interface ChatResponseFeedback {
   sentiment: Sentiment;
   items: FeedbackItem[];
 }
 
-export interface ConversationItem {
+export interface ChatEvent {
   prompt: string;
   promptId: string | null;
   answer: string | null;
   error: string | null;
   sources: DocumentSource[];
-  feedback: ConversationItemFeedback | null;
+  feedback: ChatResponseFeedback | null;
 }
 
-export interface ConversationContext {
-  conversationId: string;
-  conversationTitle: string;
-  items: ConversationItem[];
+export interface ChatSession {
+  chatSessionId: string;
+  name: string;
+  events: ChatEvent[];
 }

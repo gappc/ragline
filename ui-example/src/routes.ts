@@ -7,12 +7,12 @@ export const router = createRouter({
     {
       path: "/",
       name: "home",
-      redirect: "/conversations",
+      redirect: "/chat-sessions",
     },
     {
-      path: "/conversations",
-      name: "conversations",
-      component: () => import("./pages/ConversationsPage.vue"),
+      path: "/chat-sessions",
+      name: "chat-sessions",
+      component: () => import("./pages/ChatSessionsPage.vue"),
     },
     {
       path: "/documents",

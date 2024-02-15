@@ -66,7 +66,7 @@ import ButtonCustom from "../../../components/button/ButtonCustom.vue";
 import IconMood from "../../../components/svg/IconMood.vue";
 import IconThumbDown from "../../../components/svg/IconThumbDown.vue";
 import IconThumbUp from "../../../components/svg/IconThumbUp.vue";
-import { useConversationStore } from "../conversationStore";
+import { useChatSessionStore } from "../chatSessionStore";
 import { FeedbackItem, Sentiment } from "../types";
 import { sendFeedback, sendSentiment } from "../useFeedback";
 import FeedbackBox from "./FeedbackBox.vue";
@@ -81,13 +81,13 @@ const showFeedbackThankYou = ref(false);
 
 const { textarea, input } = useTextareaAutosize();
 
-const { currentConversationId, currentItems } = storeToRefs(
-  useConversationStore()
+const { currentChatSessionId, currentItems } = storeToRefs(
+  useChatSessionStore()
 );
 
 const sendSentimentInternal = async (sentiment: Sentiment) => {
   const success = await sendSentiment(
-    currentConversationId.value,
+    currentChatSessionId.value,
     props.promptId,
     currentItems.value,
     sentiment === props.sentiment ? "none" : sentiment
@@ -100,7 +100,7 @@ const sendSentimentInternal = async (sentiment: Sentiment) => {
 
 const sendFeedbackInternal = async () => {
   const success = await sendFeedback(
-    currentConversationId.value,
+    currentChatSessionId.value,
     props.promptId,
     currentItems.value,
     input.value
