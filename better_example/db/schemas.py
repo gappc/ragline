@@ -42,8 +42,8 @@ class ChatEventBase(BaseModel):
     query: Optional[str] = None
     answer: Optional[str] = None
     error: Optional[str] = None
-    sources: Optional[list] = None
-    feedback: Optional[list[ChatFeedbackBase]] = None
+    sources: Optional[dict[str, list[int]]] = None
+    feedback: Optional[ChatFeedbackBase] = None
 
 
 class ChatSessionBase(BaseModel):
