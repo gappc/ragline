@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import DefaultDict, List
+from typing import DefaultDict, Iterator, List
 
 from db import schemas
 from server.id import generate_id
@@ -55,15 +55,17 @@ def create_chat_event(
     user_id: int,
     chat_session_id: str,
     query_id: str,
-    content: str,
+    content: str | Iterator[str],
     type: str,
 ) -> models.ChatEvent:
     validate_user_and_chat_session_id(db, user_id, chat_session_id)
 
+    content_str = "".join(content) if isinstance(content, Iterator) else content
+
     db_chat_evente = models.ChatEvent(
         chat_session_id=chat_session_id,
         query_id=query_id,
-        content=content,
+        content=content_str,
         type=type,
     )
     db.add(db_chat_evente)

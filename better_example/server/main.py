@@ -56,13 +56,14 @@ async def post_query(
     logger = logger_bind(chat_session_id, query_id)
     try:
         username = user.username
-        logger.info("Username: {}", username)
-        logger.info("Request: {}", request)
+        user_id = user.id
+        logger.info(f"Username: {username} ({user_id})")
+        logger.info(f"Request: {request}")
 
         query = request.queries[0].query
 
         create_chat_event(
-            db, user.id, chat_session_id, query_id, query, "QUERY_REQUEST"
+            db, user_id, chat_session_id, query_id, query, "QUERY_REQUEST"
         )
 
         # Do the query
@@ -76,7 +77,7 @@ async def post_query(
 
         logger.info("Metadata: {}", response.metadata)
 
-        # Create one stream for the response and one for logging
+        # Create one stream for the response, one for persistence and one for logging
         [response_stream, response_stream_persist, response_stream_log] = (
             # If no documents were found, return the streams from string
             [
@@ -92,10 +93,10 @@ async def post_query(
         background_tasks.add_task(
             create_chat_event,
             db,
-            user.id,
+            user_id,
             chat_session_id,
             query_id,
-            "".join(response_stream_persist),
+            response_stream_persist,
             "QUERY_RESPONSE",
         )
 
