@@ -34,12 +34,7 @@
           <ButtonCustom size="xs" variant="ghost" class="p-2">
             <IconPushPin class="w-4 h-4 fill-white" />
           </ButtonCustom>
-          <ButtonCustom size="xs" variant="ghost" class="p-2">
-            <IconDelete
-              class="w-4 h-4 fill-red-500"
-              @click="deleteFile(file.name)"
-            />
-          </ButtonCustom>
+          <ButtonDeleteWithApprove @delete="deleteFile(file.name)" />
         </div>
       </div>
     </div>
@@ -50,12 +45,12 @@
 import { storeToRefs } from "pinia";
 import { computed, onBeforeMount, ref } from "vue";
 import ButtonCustom from "../../../components/button/ButtonCustom.vue";
+import ButtonDeleteWithApprove from "../../../components/button/ButtonDeleteWithApprove.vue";
 import InputCustom from "../../../components/input/InputCustom.vue";
+import IconPushPin from "../../../components/svg/IconPushPin.vue";
 import IconSearch from "../../../components/svg/IconSearch.vue";
 import { useFileStore } from "../filesStore";
 import { FileEntry } from "../types";
-import IconPushPin from "../../../components/svg/IconPushPin.vue";
-import IconDelete from "../../../components/svg/IconDelete.vue";
 
 const searchFileName = ref("");
 

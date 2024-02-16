@@ -22,50 +22,24 @@
         >
           {{ useDateFormat(chatSession.createdAt, "YYYY-MM-DD HH:mm:ss") }}
         </button>
-        <ButtonCustom
-          size="xs"
-          variant="ghost"
-          class="p-2"
-          @click="statefulDeleteChatSession(chatSession.chatSessionId)"
-        >
-          <IconDelete
-            v-if="deletingChatSessionId !== chatSession.chatSessionId"
-            class="w-4 h-4 fill-red-500"
-          />
-          <IconThumbUp v-else class="w-4 h-4 fill-red-500" />
-        </ButtonCustom>
+        <ButtonDeleteWithApprove
+          @delete="deleteChatSession(chatSession.chatSessionId)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import { useChatSessionStore } from "../chatSessionStore";
 import { useDateFormat } from "@vueuse/core";
+import { storeToRefs } from "pinia";
 import ButtonCustom from "../../../components/button/ButtonCustom.vue";
-import IconDelete from "../../../components/svg/IconDelete.vue";
-import { ref } from "vue";
-import IconThumbUp from "../../../components/svg/IconThumbUp.vue";
-
-const deletingChatSessionId = ref<string | null>(null);
+import ButtonDeleteWithApprove from "../../../components/button/ButtonDeleteWithApprove.vue";
+import { useChatSessionStore } from "../chatSessionStore";
 
 const { chatSessions, currentChatSessionId } = storeToRefs(
   useChatSessionStore()
 );
 
 const { setCurrentChatSession, deleteChatSession } = useChatSessionStore();
-
-const statefulDeleteChatSession = async (chatSessionId: string) => {
-  if (deletingChatSessionId.value !== chatSessionId) {
-    deletingChatSessionId.value = chatSessionId;
-    setTimeout(() => {
-      deletingChatSessionId.value = null;
-    }, 3000);
-    return;
-  }
-  if (deletingChatSessionId.value === chatSessionId) {
-    deleteChatSession(chatSessionId);
-  }
-};
 </script>
