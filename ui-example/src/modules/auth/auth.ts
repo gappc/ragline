@@ -3,6 +3,7 @@ import { errorToMessage } from "../api/responseError";
 import { useMessageStore } from "../messages/messageStore";
 import { useAuthStore } from "./authStore";
 import { buildBasicAuthHeader } from "./utils";
+import { useChatSessionStore } from "../chatSession/chatSessionStore";
 
 // Login function. On success, it sets the authorization and redirects to the return URL
 // or the chat-sessions page. On failure, it sets an error message and resets the authorization.
@@ -29,8 +30,11 @@ export const login = async (username: string, token: string) => {
 };
 
 export const logout = () => {
-  const { removeCredentials } = useAuthStore();
-  removeCredentials();
+  // Reset authorization
+  useAuthStore().removeCredentials;
+
+  // Reset chat session
+  useChatSessionStore().reset();
 
   // Reset messages
   useMessageStore().reset();

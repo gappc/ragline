@@ -99,6 +99,9 @@ export const useChatSessionStore = defineStore("chatSessionStore", {
       }
       chatSession.events[index] = item;
     },
+    reset() {
+      this.$reset();
+    },
   },
 });
 
