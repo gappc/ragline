@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 from typing import DefaultDict, Iterator, List
 
 from db import schemas
@@ -110,6 +111,11 @@ def get_chat_events(
 
         answer = next((x for x in chat_events if x.type == "QUERY_RESPONSE"), None)
         result_item.answer = answer.content if answer else None
+
+        # Populate the source_nodes field
+        sources = next(filter(lambda x: x.type == "DOCUMENTS", chat_events), None)
+
+        result_item.sources = json.loads(sources.content) if sources else None
 
         # Populate the feedback field
         result_item.feedback = schemas.ChatFeedbackBase(sentiment="none", items=[])

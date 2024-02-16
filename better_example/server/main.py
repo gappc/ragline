@@ -1,3 +1,4 @@
+import json
 import logging
 from itertools import tee
 from typing import Annotated
@@ -72,6 +73,16 @@ async def post_query(
         logger.info("Source nodes: {}", remove_embeddings(response.source_nodes))
 
         response_source = extract_response_source(response.source_nodes)
+
+        # Persist the source document information that was used to generate the response
+        create_chat_event(
+            db,
+            user_id,
+            chat_session_id,
+            query_id,
+            json.dumps(response_source),
+            "DOCUMENTS",
+        )
 
         logger.info("Response Source nodes short: {}", response_source)
 

@@ -3,6 +3,7 @@ import { client, parseEventStream } from "../api/client";
 import { errorToMessage } from "../api/responseError";
 import { DocumentSource, QueryBody } from "./types";
 import { useMessageStore } from "../messages/messageStore";
+import { computeSourcesBase64 } from "../chatSession/utils";
 
 export interface SubmitPromptResult {
   promptId: string | null;
@@ -61,7 +62,7 @@ export const useQuery = () => {
 
       // Try to extract the response source from the headers
       const sourcesBase64 = response.headers.get("X-RAGLINE-RESPONSE-SOURCE");
-      result.sources = computeSources(sourcesBase64);
+      result.sources = computeSourcesBase64(sourcesBase64);
 
       // Parse the event stream
       result.answer = "";
@@ -87,18 +88,4 @@ export const useQuery = () => {
     loading,
     submitPrompt,
   };
-};
-
-const computeSources = (sourcesBase64: string | null): DocumentSource[] => {
-  if (sourcesBase64 == null) {
-    return [];
-  }
-
-  const sourcesString = atob(sourcesBase64);
-  const sourcesObject: Record<string, string[]> = JSON.parse(sourcesString);
-
-  return Object.entries(sourcesObject).map(([key, value]) => ({
-    file: key,
-    pages: value.map<number>((v) => parseInt(v, 10)).sort(),
-  }));
 };

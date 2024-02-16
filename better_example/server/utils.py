@@ -21,7 +21,7 @@ def remove_embeddings(source_nodes: List[NodeWithScore]) -> List[NodeWithScore]:
     return response_source
 
 
-def extract_response_source(source_nodes: List[NodeWithScore]):
+def extract_response_source(source_nodes: List[NodeWithScore]) -> Dict[str, list[int]]:
     response_source = defaultdict(list)
 
     for node in source_nodes:

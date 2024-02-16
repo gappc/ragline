@@ -1,15 +1,11 @@
 import { client } from "../api/client";
+import { DocumentSource } from "../query/types";
 import { ChatEvent, ChatSession, FeedbackItem, Sentiment } from "./types";
 
 interface ChatSessionDto {
   chat_session_id: string;
   name: string;
   created_at: string;
-}
-
-interface DocumentSourceDto {
-  file: string;
-  pages: number[];
 }
 
 interface FeedbackItemDto {
@@ -27,7 +23,7 @@ interface ChatEventDto {
   query: string;
   answer?: string | null;
   error?: string | null;
-  sources?: DocumentSourceDto[];
+  sources?: Record<string, number[]>;
   feedback?: ChatResponseFeedback | null;
 }
 
@@ -75,7 +71,7 @@ export const fetchChatEvents = async (
     prompt: dto.query,
     answer: dto.answer ?? null,
     error: null,
-    sources: [],
+    sources: computeSources(dto.sources),
     feedback: {
       items:
         dto.feedback?.items.map<FeedbackItem>((item) => ({
@@ -84,5 +80,30 @@ export const fetchChatEvents = async (
         })) ?? [],
       sentiment: dto.feedback?.sentiment ?? "none",
     },
+  }));
+};
+
+export const computeSourcesBase64 = (
+  sourcesBase64: string | null
+): DocumentSource[] => {
+  if (sourcesBase64 == null) {
+    return [];
+  }
+
+  const sourcesString = atob(sourcesBase64);
+  const sourcesObject: Record<string, number[]> = JSON.parse(sourcesString);
+
+  return computeSources(sourcesObject);
+};
+
+export const computeSources = (
+  sources: Record<string, number[]> | null | undefined
+): DocumentSource[] => {
+  if (sources == null) {
+    return [];
+  }
+  return Object.entries(sources).map(([key, value]) => ({
+    file: key,
+    pages: value.sort((a, b) => a - b),
   }));
 };
