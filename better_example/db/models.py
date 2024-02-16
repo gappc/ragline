@@ -14,21 +14,21 @@ class User(Base):
     roles = Column(String)
     is_active = Column(Boolean, default=True)
 
-    chat_sessions = relationship("ChatSession", back_populates="owner")
+    chat_sessions = relationship("ChatSession", back_populates="user")
 
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id = Column(Integer, primary_key=True)
-    chat_session_id = Column(String, index=True)
+    chat_session_id = Column(String, index=True, unique=True)
     name = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
 
-    owner = relationship("User", back_populates="chat_sessions")
+    user = relationship("User", back_populates="chat_sessions")
 
-    chat_events = relationship("ChatEvent", back_populates="owner")
+    chat_events = relationship("ChatEvent", back_populates="chat_session")
 
 
 class ChatEvent(Base):
@@ -43,4 +43,4 @@ class ChatEvent(Base):
     type = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    owner = relationship("ChatSession", back_populates="chat_events")
+    chat_session = relationship("ChatSession", back_populates="chat_events")

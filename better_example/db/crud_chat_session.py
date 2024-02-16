@@ -14,7 +14,7 @@ def create_chat_session(db: Session, user_id: str) -> models.ChatSession:
     db_chat_session = models.ChatSession(
         chat_session_id=chat_session_id,
         name="(No name)",
-        owner_id=user_id,
+        user_id=user_id,
     )
     db.add(db_chat_session)
     db.commit()
@@ -33,7 +33,7 @@ def delete_chat_session(db: Session, user_id: str, chat_session_id: str):
 def get_chat_sessions(db: Session, user_id: int) -> List[models.ChatSession]:
     return (
         db.query(models.ChatSession)
-        .filter(models.ChatSession.owner_id == user_id)
+        .filter(models.ChatSession.user_id == user_id)
         .order_by(models.ChatSession.created_at.desc())
         .all()
     )
@@ -44,7 +44,7 @@ def get_chat_session(
 ) -> models.ChatSession | None:
     return (
         db.query(models.ChatSession)
-        .filter(models.ChatSession.owner_id == user_id)
+        .filter(models.ChatSession.user_id == user_id)
         .filter(models.ChatSession.chat_session_id == chat_session_id)
         .first()
     )

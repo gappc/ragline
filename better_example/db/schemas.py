@@ -52,7 +52,7 @@ class ChatSessionBase(BaseModel):
 
 
 class ChatSessionCreate(ChatSessionBase):
-    owner_id: str
+    user_id: str
 
 
 class ChatSession(ChatSessionBase):
