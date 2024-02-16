@@ -45,7 +45,9 @@ const { loadChatSessions, initChatSession, addItem, updateItem } =
   useChatSessionStore();
 
 // Load chat sessions
-loadChatSessions();
+if (currentChatSessionId.value == null) {
+  loadChatSessions();
+}
 
 watch(
   () => currentMessage.value,
