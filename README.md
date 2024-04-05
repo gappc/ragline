@@ -1,5 +1,7 @@
 # Ragline
 
+!!! Important note: this project was developed as POC and is not maintained anymore !!!
+
 ## Start
 
 Although not strictly necessary, it is recommended to create a file for the SQLite database:
